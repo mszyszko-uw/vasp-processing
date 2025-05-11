@@ -1,3 +1,6 @@
+# Autor Maciej Szyszko
+# Skrypt skyrpt do post-processingu - rysuje 3D gęstość elektronową z pliku CHGCAR 
+
 from pymatgen.io.vasp.outputs import Chgcar
 from pymatgen.io.vasp import Poscar
 import numpy as np
