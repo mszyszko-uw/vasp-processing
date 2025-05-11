@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=name
-#SBATCH --time=24:00:00
+#SBATCH --time=4:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --mem=40GB
@@ -8,10 +8,12 @@
 #SBATCH --error=err_test
 #SBATCH --export=none
 
-ulimit -l unlimited
-
+# Autor Maciej Szyszko
 # prosty job do slurm przydatny do puszczania obliczeń dla każdego z podfolderów (np. różne koncentracje domieszek)
 # można w miare kontrolować w którym momencie obliczeń jesteśmy na podstawie głównego pliku wyjściowego (--output)
+# raczej można to zrobić optymalniej przez job array
+
+ulimit -l unlimited
 
 module load vasp/6.3.2-intel-2021b
 #module load vasp/5.4.4-intel-2021b-vtst
