@@ -1,6 +1,7 @@
-import re 
+# Autor Maciej Szyszko
+# Skrypt do pre-processingu - przerabianie pliku .struct w odpowiedni format do obliczeń struktur mieszanych (MoWS2) w Wien2K
 
-# przerabianie pliku .struct w odpowiedni format do obliczeń struktur mieszanych (MoWS2) w Wien2K
+import re 
 
 ISPLIT = 8
 # input_file -> nazwa pliku wejściowego
