@@ -1,10 +1,12 @@
+# Autor Maciej Szyszko
+# Skrypt do post-processingu - obróbki i rysowania obliczonych mas efektywnych z kodu EMC
+# skrypt jest niezbyt ogólny i dosyć chaotyczny, jak będziemy chcieli to dodawać tą funkcjonalność to go poprawie
+
+
 import os 
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib
-
-# skrypt do obróbki mas efektywnych z kodu EMC
-# skrypt jest niezbyt ogólny i dosyć chaotyczny, jak będziemy chcieli to dodawać to się go naprawi
 
 
 # wczytywanie mas efektywnych z emc
