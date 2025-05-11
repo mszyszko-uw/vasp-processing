@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Skrypt do uruchamiania SOD, przelatuje przez wszystkie foldery po prepare_for_SOD.py
-
+# Autor Maciej Szyszko
+# Skrypt do pre-processingu - uruchamiania SOD, przelatuje przez wszystkie foldery po prepare_for_SOD.py (można je będzie połączyć w jedno)
 
 export PATH=$PATH:/home/maciej/Documents/ROOTSOD/sod-master/bin
 
