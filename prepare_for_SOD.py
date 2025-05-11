@@ -1,8 +1,10 @@
+# Autor Maciej Szyszko
+# Skrypt do pre-processingu - przygotowanie odpowiednich plików i folderów do uruchamiania SOD 
+# Dla danej wielkości superkomórki przygotowywane są wszystkie możliwe koncentracje i konfiguracje
+# Potrzebne do tego są pliki początkowe INSOD (z ustawieniami) i SGO (z operatorami symetrii)
+
 import os
 import shutil
-
-# Skrypt do przygotowywania folderów pod uruchamianie SOD
-# Potrzebne do tego są pliki początkowe INSOD i SGO z ustawieniami i operatorami symetrii
 
 def prepare_INSOD(path: str, destination: str, cell: tuple, lattice_constants: tuple, n_substitusions: int) -> None: 
     x = n_substitusions/(cell[0]*cell[1]) # concentration of doping, used in some cases
