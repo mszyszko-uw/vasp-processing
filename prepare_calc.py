@@ -1,7 +1,11 @@
+# Autor Maciej Szyszko
+# Skrypt do pre-processingu - przygotowywanie plików wejściowych do VASP pod serie obliczeń (w tym przypadku na podstawie struktur z SOD)
+# W tym przypadku na postawie plików wyjściowych SOD (struktury) tworzy odpowiednie foldery i kopiuje przygotowane szablony pozostałych plików wejściowych
+
 import os
 import shutil
 
-# skrypt do przygotowywania plików wejściowych do VASP pod serie obliczeń (w tym przypadku na podstawie struktur z SOD)
+
 calc_path = '' 
 struct_path = 'komórki_3_150/x-0.5/CALCS'
 POTCAR = 'POTCAR'
