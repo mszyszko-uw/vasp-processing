@@ -2,6 +2,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.io import FortranFile
 
+##### Autor: Karol Gałązka
+## Cel: Implementacja klasy DFT_Output, czytanie wybranych plików
+##      w całości lub tylko w potrzebnym zakresie dla przyspieszenia.
+##      Uwspólnienie formatu wczytywania dla różnych plików
+
 class PhysicalConstants:
     pi      = 3.141592653589793     # no unit
     c       = 299792458;            # m/s
@@ -15,6 +20,7 @@ class PhysicalConstants:
     Ry      = 2.179872171E-18;      # Rydberg energy [J] 
     u       = 1.660538921E-27;      # atomic mass unit [kg]
     NA      = 6.02214129E23;        # Avogadro constant[1/mol]
+
 
 class DFT_Output :
     
