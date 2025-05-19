@@ -4,6 +4,10 @@ import os
 import stat
 from tqdm import tqdm
 
+##### Autor: Karol Gałązka
+## Cel: tworzenie plików tekstowych ze składami orbitalowymi na podstawie
+##      BSEFATBAND i PROCAR
+
 # Ulepszona funkcja do obrobki plikow BSEFATBAND (kiedys ExcitonFatband)
 def ProcessBSEFATBAND(l_exc, i_band, spins,  # spins=('up','down','sum')
                i_kpts = [None, None, None],  # Można ograniczyć wybór kpuntow do wybarnych ineksow albo wspolrzednych
