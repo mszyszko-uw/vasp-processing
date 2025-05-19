@@ -3,7 +3,11 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 from matplotlib import colormaps
 
+##### Autor: Karol Gałązka
+## Cel: Rysowanie porównań struktur pasmowych zadanych różnymi
+##      parametrami z zachowaniem spójności rysunków.
 
+## Obiekt pomocniczy do zachowania prawidłowych proporcji na rysunkach
 class kline():
     def __init__(self, a_pt, b_pt, Npts, start_index, a_name = '', b_name = ''):
         self.a_pt = a_pt
@@ -22,6 +26,8 @@ class kline():
         return np.linalg.norm(self.b_pt - self.a_pt)
     
 
+## Czytanie plików DOSCAR do robienia wykresów Density Of States
+## Obecnie nie wykorzystywany
 def read_doscar(DOSCAR):
     print(f"Reading {DOSCAR}", end=' ')
     with open(DOSCAR) as dos:
@@ -57,6 +63,7 @@ def read_doscar(DOSCAR):
     return efermi, totmat, dosmat
     
 
+## Tworzenie listy obiektów kline z plików KPOINTS i POSCAR
 def make_klines(KPOINTS, POSCAR):
     print(f"Reading {POSCAR}", end=' ')
     with open(POSCAR) as poscar:
@@ -99,7 +106,9 @@ def make_klines(KPOINTS, POSCAR):
     print(klines)
     return klines
     
-    
+
+## Aktualna wersja funkcji do wczytywania PROCAR do zmiennej i zapisywania go
+## do ponownego wykorzystania
 def read_procar(PROCAR):
     try: 
         with open(PROCAR+'.npy', 'rb') as f:
@@ -183,7 +192,8 @@ def read_procar(PROCAR):
             print('Saved to PROCAR.npy')
     return promat, energs, vbmax #E_max, E_min, E_gap
     
-    
+
+## Przerabianie listy kline na oś X do rysunku
 def make_xline(klines, kline_nums = []):
     x_line = np.array([])
     x_ticks = [0]
@@ -197,6 +207,7 @@ def make_xline(klines, kline_nums = []):
     return x_line, x_ticks
 
 
+## Rysunek DOS
 def dos_plot(dosmat, ax, projections = [], ions=[], orbits=[], 
              sum_orbits = False, sum_ions = True, label = '', ylim = [-3, 3]):
     orbit_names = ['$s$', '$p_y$', '$p_z$', '$p_x$', '$d_{xy}$', 
@@ -233,6 +244,7 @@ def dos_plot(dosmat, ax, projections = [], ions=[], orbits=[],
     ax.set_xticks([MIN,MAX])
 
 
+## Robienie wykresów porównawczych
 def band_plot(promat, energs, klines, ax,
               kline_nums = [], bands = [], projections = [], ions = [], orbits = [], 
               fatbands = True, bandlines = True, sum_orbits = False, sum_ions = True, 
