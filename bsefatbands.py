@@ -4,6 +4,9 @@ import subprocess
 import os
 import stat
 
+##### Autor: Karol Gałązka
+## Cel: robienie konkretnych wykresów z plików BSEFATBAND
+
 l_exc  = [31,32]  # List of excitons' indexes to be summed
 l_band = [50,51,52,53,54]     # List of bands to draw
 n_kz   = 4        # number of k_z points
