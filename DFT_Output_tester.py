@@ -1,6 +1,9 @@
 from DFT_Output import DFT_Output
 import matplotlib.pyplot as plt
 
+##### Autor: Karol Gałązka
+## Cel: przykładowe zastosowania klasy DFT_Output
+
 # Experiment = DFT_Output('VASP')
 # Experiment.read_WAVEDERF()
 # print( Experiment.Optical_Selection_Rules(1, 52, save = 'VASP_OSR') )
