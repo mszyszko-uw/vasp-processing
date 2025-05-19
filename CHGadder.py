@@ -1,5 +1,8 @@
 import numpy as np
 
+##### Autor: Karol Gałązka
+## Cel: Łączenie plików CHG parami (dla wybranych ekscytonów)
+
 folder = '/home/karol/Monolayers/T_Wozniak/CHGs/' # Folder z plikami CHG
 Nums = [[3,4], [11,12], [15,16], [19,20], [31,32], [53,54]] # Mozna seryjnie podac kilka par zeby po kolei przerobic
 # Skrypt finalnie jest dosc wolny bo zajmuje okolo 13s na jedna pare, ale przynajmniej dziala
