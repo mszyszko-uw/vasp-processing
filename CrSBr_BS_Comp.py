@@ -105,9 +105,10 @@ def read_procar(PROCAR):
         with open(PROCAR+'.npy', 'rb') as f:
             promat = np.load(f)
             energs = np.load(f)
-            E_max  = np.load(f)
-            E_min  = np.load(f)
-            E_gap  = np.load(f)
+            vbmax = np.load(f)
+            # E_max  = np.load(f)
+            # E_min  = np.load(f)
+            # E_gap  = np.load(f)
             print('Read from PROCAR.npy')
     except(FileNotFoundError):
         print(f"Checking {PROCAR}")
@@ -137,26 +138,30 @@ def read_procar(PROCAR):
             nkpts, nbands, nions = int(data[3]), int(data[7]), int(data[11])
             proj = 0
             promat = np.zeros((nkpts, nbands, nprjct, nions, 9), dtype=float)
-            energs = np.zeros((nkpts, nbands), dtype=float)
-            vbmax = 0
+            energs = np.zeros((nkpts, nbands, nprjct if nprjct==2 else 1), dtype=float)
+            vbmax = []
+            # kflag = 0
             for line in tqdm(procar, total=nlines - ((nions+1)*nprjct)*nbands*nkpts - 2):
                 if "# of k-points:" in line:
                     proj += 1
                 data = line.split()
                 if len(data) > 0:
-                    if data[0] == 'k-point': kpoint = int(data[1])-1
+                    if data[0] == 'k-point': 
+                        kpoint = int(data[1])-1
+                        # if kpoint == 0: kflag += 1
                     if data[0] == 'band': 
                         band = int(data[1])-1
-                        energs[kpoint, band] = float(data[4])
-                        if vbmax==0 and int(float(data[7]))==0:
-                            vbmax = band
+                        # if kflag == 1:
+                        energs[kpoint, band, proj if nprjct==2 else 0] = float(data[4])
+                        if len(vbmax)==proj and int(float(data[7]))==0:
+                            vbmax.append(band)
                     if data[0] == 'ion':
                         if nprjct != 2:
-                            for proj in range(nprjct):
+                            for iproj in range(nprjct):
                                 for ion in range(nions):
                                     mrow = np.fromstring(procar.readline(),
                                                         dtype=float, sep=' ')[1:-1]
-                                    promat[kpoint, band, proj, ion, :] = mrow
+                                    promat[kpoint, band, iproj, ion, :] = mrow
                                 procar.readline()
                         else:
                             for ion in range(nions):
@@ -165,17 +170,18 @@ def read_procar(PROCAR):
                                 promat[kpoint, band, proj, ion, :] = mrow
                             procar.readline()
         print("PROCAR read, promat shape is:", promat.shape, f'vbmax is {vbmax}')
-        E_max = np.max(energs[:,vbmax-1])
-        E_min = np.min(energs[:,vbmax])
-        E_gap = E_min - E_max
+        # E_max = np.max(energs[:,vbmax-1])
+        # E_min = np.min(energs[:,vbmax])
+        # E_gap = E_min - E_max
         with open(PROCAR+'.npy', 'wb') as f:
             np.save(f, promat)
             np.save(f, energs)
-            np.save(f, E_max)
-            np.save(f, E_min)
-            np.save(f, E_gap)
+            np.save(f, vbmax)
+            # np.save(f, E_max)
+            # np.save(f, E_min)
+            # np.save(f, E_gap)
             print('Saved to PROCAR.npy')
-    return promat, energs, E_max, E_min, E_gap
+    return promat, energs, vbmax #E_max, E_min, E_gap
     
     
 def make_xline(klines, kline_nums = []):
@@ -232,7 +238,8 @@ def band_plot(promat, energs, klines, ax,
               fatbands = True, bandlines = True, sum_orbits = False, sum_ions = True, 
               label = '', bandcolor='black'):
     x_line, x_ticks = make_xline(klines, kline_nums)
-    ebands = np.array([]).reshape(0, energs.shape[1])
+    ebands = np.array([]).reshape(0, *energs.shape[1:])
+    # print(ebands.shape)
     pbands = np.array([]).reshape(0, *promat.shape[1:])
     orbit_names = ['$s$', '$p_y$', '$p_z$', '$p_x$', '$d_{xy}$', 
               '$d_{yz}$', '$d_{z^2}$', '$d_{xz}$', '$d_{x^2-y^2}$']
@@ -263,29 +270,34 @@ def band_plot(promat, energs, klines, ax,
             ebands = np.concatenate([ebands, energs[ei:(si-1 if si-1 >= 0 else None):-1]], axis = 0)
             pbands = np.concatenate([pbands, promat[ei:(si-1 if si-1 >= 0 else None):-1]], axis = 0)
             xlabels.append(klines[-num-1].a_name)
-    if len(bands) == 0:
-        if bandlines: ax.plot(x_line, ebands, color=bandcolor, linewidth = 0.5)
-    elif bandlines: ax.plot(x_line, ebands[:,bands], color=bandcolor, linewidth = 0.5)
+    
     if sum_ions:
         for ion in ions[1:]:
             pbands[:,:,:,ions[0]-1,:] += pbands[:,:,:,ion-1,:]
         ions = [ions[0]]
+    for proj in projections:
+        if len(bands) == 0:
+            if bandlines: ax.plot(x_line, ebands[:,:,proj-1], color=bandcolor, linewidth = 0.5)
+        elif bandlines: ax.plot(x_line, ebands[:,bands,proj-1], color=bandcolor, linewidth = 0.5)
     if fatbands:
         for ion in ions:
             for proj in projections:
+                if len(bands) == 0:
+                    if bandlines: ax.plot(x_line, ebands[:,:,proj-1], color=bandcolor, linewidth = 0.5)
+                elif bandlines: ax.plot(x_line, ebands[:,bands,proj-1], color=bandcolor, linewidth = 0.5)
                 if sum_orbits:
                     ax.scatter(np.stack([x_line]*energs.shape[1], axis=1), 
-                                ebands, np.sum(np.abs([100*pbands[:,:,proj-1,ion-1,j] for j in orbits]), axis=0), 
+                                ebands[:,:,proj-1], np.sum(np.abs([100*pbands[:,:,proj-1,ion-1,j] for j in orbits]), axis=0), 
                                 label = label, color = colors[1])
                 else:
                     for j in orbits:
                         if len(bands) == 0:
                             ax.scatter(np.stack([x_line]*energs.shape[1], axis=1), 
-                                    ebands, np.abs(100*pbands[:,:,proj-1,ion-1,j]), 
+                                    ebands[:,:,proj-1], np.abs(100*pbands[:,:,proj-1,ion-1,j]), 
                                     label = orbit_names[j], color = colors[j])
                         else:
                             ax.scatter(np.stack([x_line]*len(bands), axis=1), 
-                                    ebands[:,bands], 100*pbands[:,bands,proj-1,ion-1,j], 
+                                    ebands[:,bands,proj-1], 100*pbands[:,bands,proj-1,ion-1,j], 
                                     label = orbit_names[j], color = colors[j])
     for i in x_ticks[1:-1]:
         ax.axvline(i, color="black", linestyle=":")
@@ -296,34 +308,34 @@ def band_plot(promat, energs, klines, ax,
 
 
 ### COMPARISON SPECIFIERS ###
-calc   = 'pure-1x1'
+calc   = 'AFM'
 mode   = 'SOC'
 matr   = 'Cr'
 orbt   = 'd'
 proj   = 'np'
 
-calc_2 = 'pure-1x2'
+calc_2 = 'AFM_U6'
 mode_2 = 'SOC'
 matr_2 = 'Cr'
 orbt_2 = 'd'
 proj_2 = 'np'
 
-kline_nums   = [3,4,5,6]
-kline_nums_2 = [3,4,5,6]
+kline_nums   = [4,1]
+kline_nums_2 = [4,1]
 k_colors     = {
                 2:(0,1,0,0.07), 4:(0,1,0,0.07), 7:(0,1,0,0.07), 
                 1:(1,0,0,0.07), 3:(1,0,0,0.07), 6:(1,0,0,0.07), 8:(1,0,0,0.07), 
                 5:(0,0,1,0.07)
                 }
 
-one_plot     = False
-show         = True
-figsize      = (9, 6)
+one_plot     = True
+show         = False
+figsize      = (6, 10)
 ymin         = -1.1
 ymax         =  2.4
-T_mod        = '2'
+T_mod        = ''
 #############################
-kline_nums_3   = [3,4,5,6]
+# kline_nums_3   = [3,4,5,6]
 
 
 ### RUN THE COMPARISON ###
@@ -333,9 +345,14 @@ projection_2 = proj_dict[proj_2]
 projections = [projection]
 projections_2 = [projection_2]
 
-fatbands = bool(projection*projection_2)
+fatbands = False #bool(projection*projection_2)
 
-size = int(calc[-3]) + int(calc[-1])
+try: size = int(calc[-3]) + int(calc[-1])
+except: size = 1
+if size == 1:
+    if matr == 'Cr': ions = [1,2,3,4]
+    if matr == 'S': ions = [5,6,7,8]
+    if matr == 'Br': ions = [9,10,11,12]
 if size == 2:
     if matr == 'Cr': ions = [1,2,3,4]
     if matr == 'S': ions = [5,6,7,8]
@@ -350,7 +367,12 @@ elif size == 4:
     if matr == 'S': ions = [i for i in range(17,33)]
     if matr == 'Br': ions = [i for i in range(33,49)]
 
-size_2 = int(calc_2[-3]) + int(calc_2[-1])
+try: size_2 = int(calc[-3]) + int(calc[-1])
+except: size_2 = 1
+if size_2 == 1:
+    if matr == 'Cr': ions = [1,2,3,4]
+    if matr == 'S': ions = [5,6,7,8]
+    if matr == 'Br': ions = [9,10,11,12]
 if size_2 == 2:
     if matr_2 == 'Cr': ions_2 = [1,2,3,4]
     if matr_2 == 'S': ions_2 = [5,6,7,8]
@@ -370,37 +392,50 @@ orbits = orbt_dict[orbt]
 orbits_2 = orbt_dict[orbt_2]
 
 
-PROCAR  = '/home/karol/Monolayers/VASP/zps/'+calc+'/'+mode+'/PROCAR'
-POSCAR  = '/home/karol/Monolayers/VASP/zps/'+calc+'/'+mode+'/POSCAR'
-KPOINTS = '/home/karol/Monolayers/VASP/zps/'+calc+'/'+mode+'/KPOINTS'
+PROCAR  = '/home/karol/Monolayers/VASP/zps/CrSBr_Karol/'+calc+'/'+mode+'/PROCAR'
+POSCAR  = '/home/karol/Monolayers/VASP/zps/CrSBr_Karol/'+calc+'/'+mode+'/POSCAR'
+KPOINTS = '/home/karol/Monolayers/VASP/zps/CrSBr_Karol/'+calc+'/'+mode+'/KPOINTS'
 
-PROCAR_2  = '/home/karol/Monolayers/VASP/zps/'+calc_2+'/'+mode_2+'/PROCAR'
-POSCAR_2  = '/home/karol/Monolayers/VASP/zps/'+calc_2+'/'+mode_2+'/POSCAR'
-KPOINTS_2 = '/home/karol/Monolayers/VASP/zps/'+calc_2+'/'+mode_2+'/KPOINTS'
+PROCAR_2  = '/home/karol/Monolayers/VASP/zps/CrSBr_Karol/'+calc_2+'/'+mode_2+'/PROCAR'
+POSCAR_2  = '/home/karol/Monolayers/VASP/zps/CrSBr_Karol/'+calc_2+'/'+mode_2+'/POSCAR'
+KPOINTS_2 = '/home/karol/Monolayers/VASP/zps/CrSBr_Karol/'+calc_2+'/'+mode_2+'/KPOINTS'
 
 #############
-PROCAR_3  = '/home/karol/Monolayers/VASP/zps/pure-2x1/SOC/PROCAR'
-POSCAR_3  = '/home/karol/Monolayers/VASP/zps/pure-2x1/SOC/POSCAR'
-KPOINTS_3 = '/home/karol/Monolayers/VASP/zps/pure-2x1/SOC/KPOINTS'
+# PROCAR_3  = '/home/karol/Monolayers/VASP/zps/pure-2x1/SOC/PROCAR'
+# POSCAR_3  = '/home/karol/Monolayers/VASP/zps/pure-2x1/SOC/POSCAR'
+# KPOINTS_3 = '/home/karol/Monolayers/VASP/zps/pure-2x1/SOC/KPOINTS'
 #############
 
 title = calc+'-'+mode+('-'+matr+'-'+orbt+'-'+proj)*fatbands+' VS '+\
         calc_2+'-'+mode_2+('-'+matr_2+'-'+orbt_2+'-'+proj_2)*fatbands\
-        +' VS '+'pure-2x1-SOC'
+        #+' VS '+'pure-2x1-SOC'
 
 
 klines = make_klines(KPOINTS, POSCAR)
-promat, energs, E_max, E_min, E_gap = read_procar(PROCAR)
+promat, energs, vbmax = read_procar(PROCAR)
+if projection == 1 or projection == 2: proje = projection-1
+else: proje = 0
+print(energs.shape)
+print(vbmax)
+E_max = np.max(energs[:,vbmax[proje]-1,proje])
+E_min = np.min(energs[:,vbmax[proje],proje])
+E_gap = E_min - E_max
 energs -= E_max
+print(energs)
 
 klines_2 = make_klines(KPOINTS_2, POSCAR_2)
-promat_2, energs_2, E_max_2, E_min_2, E_gap_2 = read_procar(PROCAR_2)
+promat_2, energs_2, vbmax_2 = read_procar(PROCAR_2)
+if projection_2 == 1 or projection_2 == 2: proje_2 = projection_2-1
+else: proje_2 = 0
+E_max_2 = np.max(energs_2[:,vbmax_2[proje_2]-1,proje_2])
+E_min_2 = np.min(energs_2[:,vbmax_2[proje_2],proje_2])
+E_gap_2 = E_min_2 - E_max_2
 energs_2 -= E_max_2
 
 ############
-klines_3 = make_klines(KPOINTS_3, POSCAR_3)
-promat_3, energs_3, E_max_3, E_min_3, E_gap_3 = read_procar(PROCAR_3)
-energs_3 -= E_max_3
+# klines_3 = make_klines(KPOINTS_3, POSCAR_3)
+# promat_3, energs_3, E_max_3, E_min_3, E_gap_3 = read_procar(PROCAR_3)
+# energs_3 -= E_max_3
 ############
 
 
@@ -412,25 +447,25 @@ norm = 0
 for i in width_ratios: norm += i
 for i in width_ratios_2: norm += i
 #############
-rem2 = len(kline_nums) + len(kline_nums_2) + 1
-width_ratios_3 = [abs(klines_3[knum-1]) for knum in kline_nums_3]
-for i in width_ratios_3: norm += i
+# rem2 = len(kline_nums) + len(kline_nums_2) + 1
+# width_ratios_3 = [abs(klines_3[knum-1]) for knum in kline_nums_3]
+# for i in width_ratios_3: norm += i
 #############
-norm /= len(width_ratios) + len(width_ratios_2) + len(width_ratios_3)
-kline_nums = kline_nums + [0] + kline_nums_2 + [-1] + kline_nums_2
-width_ratios = width_ratios + [norm] + width_ratios_2 + [norm] + width_ratios_3
+norm /= len(width_ratios) + len(width_ratios_2) #+ len(width_ratios_3)
+kline_nums = kline_nums + [0] + kline_nums_2 #+ [-1] + kline_nums_2
+width_ratios = width_ratios + [norm] + width_ratios_2 #+ [norm] + width_ratios_3
 
 fig = plt.figure(figsize=figsize)
 fig.suptitle(title, size=24)
 
 gs = fig.add_gridspec(1, len(kline_nums_2) if one_plot else len(kline_nums), 
                       width_ratios = width_ratios_2 if one_plot else width_ratios, #height_ratios=(2, 1),
-                      left=0.05, right=0.97, bottom=0.06, top=0.92,
+                      left=0.1, right=0.97, bottom=0.06, top=0.92,
                       wspace=0.0, hspace=0.1)
 
 E_gap_now = E_gap
 axs = gs.subplots()
-for knum, ax in tqdm(np.ndenumerate(axs), total = len(kline_nums)):
+for knum, ax in tqdm(np.ndenumerate(axs), total = len(kline_nums_2) if one_plot else len(kline_nums)):
     if kline_nums[knum[0]] == 0 : 
         ax.axis('off')
         promat, energs, klines, E_gap_now = promat_2, energs_2, klines_2, E_gap_2
@@ -438,14 +473,14 @@ for knum, ax in tqdm(np.ndenumerate(axs), total = len(kline_nums)):
         continue 
     if kline_nums[knum[0]] == -1 : 
         ax.axis('off')
-        promat, energs, klines, E_gap_now = promat_3, energs_3, klines_3, E_gap_3
+        # promat, energs, klines, E_gap_now = promat_3, energs_3, klines_3, E_gap_3
         continue 
     band_plot(promat, energs, klines, 
               kline_nums=[kline_nums[knum[0]]], bands=[], projections=projections, ions=ions, orbits=orbits, 
               ax = ax, sum_orbits=True, fatbands=fatbands, bandcolor='black')
     if one_plot:
         band_plot(promat_2, energs_2, klines_2, 
-              kline_nums=[kline_nums[knum[0]]], bands=[], projections=projections, ions=ions, orbits=orbits, 
+              kline_nums=[kline_nums[knum[0]]], bands=[], projections=projections_2, ions=ions, orbits=orbits, 
               ax = ax, sum_orbits=True, fatbands=fatbands, bandcolor='red')
     ax.set(yticks=[])
     ax.set_ylim([ymin, ymax])
@@ -457,16 +492,16 @@ axs[0].set_yticklabels([ymin,0,f'{E_gap:.2f}',ymax])
 if not one_plot:
     axs[rem+1].set_yticks([ymin,0,E_gap_2,ymax])
     axs[rem+1].set_yticklabels([ymin,0,f'{E_gap_2:.2f}',ymax])
-axs[rem2+1].set_yticks([ymin,0,E_gap_3,ymax])
-axs[rem2+1].set_yticklabels([ymin,0,f'{E_gap_3:.2f}',ymax])
+# axs[rem2+1].set_yticks([ymin,0,E_gap_3,ymax])
+# axs[rem2+1].set_yticklabels([ymin,0,f'{E_gap_3:.2f}',ymax])
 
 if show:
     plt.show()
 else:
     name = calc+'-'+mode+('-'+matr+'-'+orbt+'-'+proj)*fatbands+'-VS-'+\
         calc_2+'-'+mode_2+('-'+matr_2+'-'+orbt_2+'-'+proj_2)*fatbands\
-           +'pure-2x1-SOC'
-    plt.savefig(f"/home/karol/Monolayers/VASP/zps/plots/{name}{T_mod}")
+           #+'pure-2x1-SOC'
+    plt.savefig(f"/home/karol/Monolayers/VASP/CrSBr/plots2/{name}{T_mod}")
 
 
 
