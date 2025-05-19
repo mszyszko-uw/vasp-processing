@@ -4,6 +4,13 @@ import os
 import stat
 from tqdm import tqdm
 
+#### Autor: Karol Gałązka
+## Cel: postprocessing plików BSEFATBAND wraz z przygotowaniem
+##      jego pomniejszonych wesji do późniejszego wykorzystania
+
+## Jedna z niestety kilku implementacji tej funkcji, czyta PROCAR,
+## wczytuje go do zmiennej i zapisuje go do .npy.
+## Aktualna wersja w CrSBr_BS_Comp.py
 def ReadPROCAR(PROCAR):
     try: 
         with open(PROCAR+'.npy', 'rb') as f:
@@ -219,6 +226,8 @@ def ProcessBSEFATBAND(l_exc, i_band,
             subprocess.call(f'{folder}processing.sh')
 
 
+## Szykowanie plików tekstowych na podstawie BSEFATBAND
+## w formacie łatwym do narysowania przez GNUplot
 def MakeBSEband(lexc, bands, spins, start_index=1, BSEfolder = './', PROCAR = './PROCAR'):
     promat, energs, E_max, E_min, E_gap, kindexer = ReadPROCAR(PROCAR)
     kindexer = kindexer.round(5)
