@@ -1,6 +1,9 @@
 import numpy as np
 from tqdm import tqdm
 
+##### Autor: Karol Gałązka
+## Cel: przepisanie PROCAR z CrSBr do czytelniejszej postaci
+
 def readprocar(PROCAR):
     try: 
         with open(PROCAR+'.npy', 'rb') as f:
