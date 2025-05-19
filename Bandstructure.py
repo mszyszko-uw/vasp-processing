@@ -4,6 +4,11 @@ from tqdm import tqdm
 from matplotlib import colormaps
 from matplotlib.lines import Line2D
 
+##### Autor: Karol Gałązka
+## Cel: Wyrysowanie struktury pasmowej o zadanych parametrach
+## na podstawie pliku PROCAR
+
+## Powielone czytanie PROCAR, przestarzałe
 def read_procar(PROCAR):
     # try: 
         # with open(PROCAR+'.npy', 'rb') as f:
@@ -88,6 +93,7 @@ def read_procar(PROCAR):
         return promat, energs, E_max, E_min, E_gap, kindexer
 
 
+## Rysowanie struktury pasmowej na pojedynczym wykresie
 def band_plot(promat, energs, ax,
               kpoints = [], bands = [], projections = [], ions = [], orbits = [], 
               fatbands = True, bandlines = False, sum_orbits = False, sum_ions = True, 
