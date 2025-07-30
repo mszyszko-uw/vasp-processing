@@ -9,9 +9,7 @@ import math
 
 # SETTINGS
 pseudopotentials_path = '/net/scratch/hscra/plgrid/plgmszyszko/potpaw_PBE'
-#INCAR_templates_path = 'INCAR_templates'
 directory_name = 'Calculations_MoTe2_test2'
-#system_name = 'bulk MoTe2'
 INCAR_settings = {
     'SYSTEM': 'bulk MoTe2',
     'ISMEAR': 0,
@@ -24,7 +22,7 @@ INCAR_settings = {
 dry_settings = {'ALGO': None, 'NELM': 1, 'LWAVE': '.FALSE.', 'LCHARG': '.FALSE.'}
 
 conv_kmesh = [(6, 6, 2), (7, 7, 2)]
-conv_encut = [250, 300, 350, 400]
+conv_encut = [250, 300, 350]
 
 chosen_kmesh = (7, 7, 2)
 chosen_encut = 400
@@ -59,7 +57,6 @@ def create_step(step_number, part):
     elif step_number == 'step02':
         print(step2_geo(os.path.join(directory_name, 'step02'), part))
     elif step_number == 'step03':
-        #print("uruchomione")
         paths = step3_conv_test(os.path.join(directory_name, 'step03'), part, kmesh_list=conv_kmesh, encut_list=conv_encut)
         for p in paths:
             print(p)
@@ -559,6 +556,7 @@ def step9_dos_so(folder, part):
         #check_errors()
         return os.path.abspath(bs_run)
 
+
 def create_potcar(elements, potcar_path):
     with open(os.path.join(pseudopotentials_path, 'recomended_pseudopotentials.txt'), 'r') as f, open(potcar_path, 'w') as POTCAR:
         lines = f.readlines()
@@ -645,27 +643,21 @@ def create_report(vaspout, save_path):
         except:
             results['ENCUT'] = 'from POTCAR'
 
+    fig = plt.figure(figsize=(8.3, 11.7))
 
-    fig = plt.figure(figsize=(8.3, 11.7))  # A4 portrait in inches
-
-    # --- Top: Scalar results and Forces table ---
     ax1 = fig.add_axes([0.05, 0.55, 0.9, 0.4])
     ax1.axis('off')
 
-    # Title
     ax1.text(0.5, 1.05, "Simulation Report", ha="center", va="top", fontsize=16, weight="bold")
 
-    # Scalar results
     y_pos = 0.95
     for key, value in results.items():
         ax1.text(0.05, y_pos, f"{key}:", fontsize=12, weight="bold")
         ax1.text(0.35, y_pos, f"{value}", fontsize=12)
         y_pos -= 0.07
 
-    # Forces table header
     ax1.text(0.05, y_pos - 0.05, "Atomic Forces [eV/Å]:", fontsize=12, weight="bold")
 
-    # Forces table
     col_labels = ["Fx", "Fy", "Fz"]
     table_data = [[f"{f:.4f}" for f in row] for row in forces[0]]
 
@@ -680,7 +672,6 @@ def create_report(vaspout, save_path):
     table.auto_set_font_size(False)
     table.set_fontsize(10)
 
-    # --- Bottom: Chart ---
     ax2 = fig.add_axes([0.15, 0.08, 0.7, 0.35])
     ax2.plot(oszicar[:, 0], oszicar[:, 2], marker='o', label='dE')
     ax2.plot(oszicar[:, 0], oszicar[:, 3], marker='o', label='d eps')
@@ -690,25 +681,52 @@ def create_report(vaspout, save_path):
     ax2.legend()
     ax2.grid(True)
 
-    # Save to PDF
     plt.savefig(save_path, format="pdf")
     plt.close()
 
 def convergence_report(folder, kmesh_list, encut_list):
-    with open(os.path.join(folder, 'convergence_report.csv'), 'w') as f:
-        # TO DO
-        for kmesh in kmesh_list:
-            f.write(f'k{kmesh[0]}x{kmesh[1]}x{kmesh[2]}, a, b, c, converged \n')
-            for encut in encut_list:
-                with h5py.File(os.path.join(folder, f'k{kmesh[0]}x{kmesh[1]}x{kmesh[2]}', f'e{encut}', '03_t_scf', 'vaspout.h5'), "r") as h5:
-                    lattice = h5['results/positions/lattice_vectors'][:]
-                    forces = h5['intermediate/ion_dynamics/forces'][:]
-                    stress = h5['intermediate/ion_dynamics/stress'][:]
-                    if (abs(stress) < 1).all() and (forces < 1e-3).all():
-                        converged = True
+    data = {'a': {}, 'b': {}, 'c': {}, 'converged': {}}
+
+    for kmesh in kmesh_list:
+        kmesh_key = f'k{kmesh[0]}x{kmesh[1]}x{kmesh[2]}'
+        data['a'][kmesh_key] = []
+        data['b'][kmesh_key] = []
+        data['c'][kmesh_key] = []
+        data['converged'][kmesh_key] = []
+
+        for encut in encut_list:
+            filepath = os.path.join(folder, kmesh_key, f'e{encut}', '03_t_scf', 'vaspout.h5')
+            print(filepath)
+            with h5py.File(filepath, "r") as h5:
+                lattice = h5['results/positions/lattice_vectors'][:]
+                forces = h5['intermediate/ion_dynamics/forces'][:]
+                stress = h5['intermediate/ion_dynamics/stress'][:]
+                a = np.linalg.norm(lattice[0])
+                b = np.linalg.norm(lattice[1])
+                c = np.linalg.norm(lattice[2])
+                converged = (abs(stress) < 1).all() and (forces < 1e-3).all()
+                data['a'][kmesh_key].append((encut, a))
+                data['b'][kmesh_key].append((encut, b))
+                data['c'][kmesh_key].append((encut, c))
+                data['converged'][kmesh_key].append((encut, converged))
+
+    with open(os.path.join(folder, 'convergence_report_matrix.csv'), 'w') as f:
+        for quantity in ['a', 'b', 'c', 'converged']:
+            f.write(f'{quantity}')
+            for kmesh in kmesh_list:
+                kmesh_key = f'k{kmesh[0]}x{kmesh[1]}x{kmesh[2]}'
+                f.write(f', {kmesh_key}')
+            f.write('\n')
+            for i, encut in enumerate(encut_list):
+                f.write(f'e{encut}')
+                for kmesh in kmesh_list:
+                    kmesh_key = f'k{kmesh[0]}x{kmesh[1]}x{kmesh[2]}'
+                    value = data[quantity][kmesh_key][i][1]
+                    if quantity == 'converged':
+                        f.write(f', {str(value)}')
                     else:
-                        converged = False
-                    f.write(f'e{encut}, {np.linalg.norm(lattice[0]):.5f}, {np.linalg.norm(lattice[1]):.5f}, {np.linalg.norm(lattice[2]):.5f}, {converged} \n')       
+                        f.write(f', {value:.5f}')
+                f.write('\n')
             f.write('\n')
 
 def create_kpath_standard(file, k_points, points):
@@ -745,7 +763,3 @@ parser.add_argument("--part", type=str, help="Part of the step")
 args = parser.parse_args()
 
 path = create_step(step_number=args.step, part=args.part)
-#create_kpath_standard('KP', k_points=k_path, points=min_points+10)
-#print(path)
-#convergence_report('example01/step03_conv_test', conv_kmesh, conv_encut)
-#create_report('vaspout.h5', 'rep.pdf')
