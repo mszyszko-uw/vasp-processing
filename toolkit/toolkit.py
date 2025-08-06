@@ -221,7 +221,7 @@ def step3_conv_test(folder, part, kmesh_list, encut_list):
                 KPAR, NBANDS = get_parallelization_variables(os.path.join(k_folder, '00_t_dry', 'vaspout.h5'))
                 INCAR_settings['NBANDS'] = NBANDS
                 INCAR_settings['NPAR'] = 4
-                INCAR_settings['KPAR'] = 7 #KPAR
+                INCAR_settings['KPAR'] = KPAR
                 INCAR_settings['ENCUT'] = encut
                 modify_incar(os.path.join(geo1, 'INCAR'), remove=dry_settings, add=INCAR_settings)
         #create_array_job()
