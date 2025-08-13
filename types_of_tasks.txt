@@ -1,0 +1,128 @@
+Assumptions:
+- We use VASP 6.5.1 or newer
+- Calculations, pre- and postprocessing is done on HPC clusters with SLURM
+- Pre- and postprocessing can be also done on local few-cores computers
+- Postprocess vaspout.h5 file as much as possible
+- Instead of WAVECAR and CHGCAR, use vaspwave.h5 - NOT YET POSSIBLE
+- Use array jobs 
+- User provides the starting POSCARs 
+- Use recommended PBE POTCARs, located in a directory on the cluster
+- After each task finishes (succesfully or crash) a report is produced  
+- We always KEEP files: INCAR, POSCAR, POTCAR, KPOINTS, EIGENVAL, log, OSZICAR, OUTCAR, *.h5, IBZKPT, err, job.sh
+- We always REMOVE files: REPORT, XDATACAR, PCDAT
+- Depending on task, we (parse and) REMOVE files: WAVECAR, CHG*, WAVEDER*, PROCAR, vasprun.xml, BSEFATBAND, CONTCAR
+
+Name of task:
+(00, 01, ..)<prefix>_<acronym>(_<suffix>)
+
+prefix:
+	t - single task
+	s - sequence of tasks (next task input depends on the previous task output)
+	a - array of independent single tasks or sequences (for array jobs on clusters)
+	w - workflow
+
+acronym:
+	dry - preparatory calculation w/o iterations: to check number of electrons, bands, kpoints, generate grids 
+	scf - SCF (static) calculation: to check total energy, forces and stress tensor, obtain charge density and wavefunction
+	geo - optimization of geometrical parameters
+	bs - electronic band structure calculation
+	dos - electronic DOS calculation
+	eps - macroscopic dielectric tensor calculation
+	epsfcn - dielectric function calculation
+	meff - carrier effective mass calculation
+	selrul - transition strengths, polarizations, selection rules
+	gband - band g-factors
+	gexc - exciton (approximated by one direct transition) g-factors
+	
+suffix (optional):
+	so - with SOC
+	hse06 - with hse06
+	dsh - with double screened hybrid 
+
+######################## SINGLE TASKS #########################################
+
+t_dry, t_dry_so
+	description: dry run w/o iterations: get number of bands, kpoints, generate grids, check input. Run w/o SLURM, before each new taks
+	number of cores: 1
+	memory per core: < 1 GB
+	time: few seconds
+	vasp version: any
+	executable: std, ncl
+	input files: INCAR, POSCAR, KPOINTS, POTCAR
+	input details: minimal input + ALGO = None, NELM = 1, no parallelization
+	output files: vaspout.h5, (OUTCAR, IBZKPT)
+	output details: NELECT, NBANDS, NKPTS
+	
+t_scf
+	description: SCF (static) calculation: to get total energy, forces, stress tensor, charge density, wavefunction
+	number of cores: 10-100
+	memory per core: < 2 GB
+	time: 10 s - 10 h
+	vasp version: any
+	executable: std
+	input files: INCAR, POSCAR, KPOINTS, POTCAR, (vaspin.h5)
+	input details: minimal input
+	output files: vaspout.h5, vaspwave.h5, (CHGCAR, WAVECAR, EIGENVAL, OUTCAR, OSZICAR, log)
+	output details: we look at convergence of dE and deps; TOTEN
+	
+t_scf_so
+	description: SCF+SO (static) calculation: to check total energy, forces and stress tensor, obtain charge density and wavefunction
+	number of cores: 10-100
+	memory per core: < 2 GB 
+	time: 1 min - 10 h (more than t_scf)
+	vasp version: any
+	executable: ncl
+	input files: INCAR, POSCAR, KPOINTS, POTCAR, vaspwave.h5 (WAVECAR)from t_scf
+	input details: minimal input, NBANDS is doubled wrt t_scf
+	output files: vaspout.h5, vaspwave.h5, (CHGCAR, WAVECAR, EIGENVAL, OUTCAR, OSZICAR, log)
+	output details: we look at convergence of dE and deps 
+	
+t_geo, t_geo_so
+	description: single optimization of geometrical parameters - various types (ISIF) and constraints
+	number of cores: 10-100
+	memory per core: < 2 GB 
+	time: 1 min - 100 h (>10x more than t_scf)
+	vasp version: any
+	executable: std, ncl
+	input files: INCAR, POSCAR, KPOINTS, POTCAR, vaspwave.h5 (WAVECAR) from previous run 
+	input details: minimal input + geometrical parameters + vdw + constraints
+	output files:  CONTCAR, OUTCAR, OSZICAR, log, vaspout.h5, vaspwave.h5 (WAVECAR)
+	output details: we look at convergence of bfgs loop and scf loops 
+	
+t_bs, t_bs_so
+	description: electronic band structure (with projections) on a k-path
+	number of cores: 10-100
+	memory per core: < 2 GB 
+	time: 1 min - 10 h (less than t_scf)
+	vasp version: any
+	executable: std, ncl
+	input files: INCAR, POSCAR, KPOINTS, POTCAR, CHGCAR from previous run
+	input details: minimal input + bs parameters
+	output files: OUTCAR, OSZICAR, log, vaspout.h5, EIGENVAL, (PROCAR)
+	output details: we look at convergence of nscf loop
+	
+t_dos, t_dos_so
+	description: electronic density of states (with projections) on a k-grid
+	number of cores: 10-100
+	memory per core: < 2 GB 
+	time: 1 min - 10 h 
+	vasp version: any
+	executable: std, ncl
+	input files: INCAR, POSCAR, KPOINTS, POTCAR, CHGCAR from previous run
+	input details: minimal input + dos parameters
+	output files: OUTCAR, OSZICAR, log, vaspout.h5, EIGENVAL, DOSCAR
+	output details: we look at convergence of nscf loop
+
+######################## ARRAYS OF TASKS #########################################
+
+a_test
+	description: convergence test of lattice constants wrt cutoff energy and k-points grids
+	number of cores: many and varies
+	memory per core: < 2 GB
+	time: 1 h - 10 h
+	vasp version: any
+	executable: std, ncl
+	input files: INCAR, POSCAR, KPOINTS, POTCAR, list of ecuts and k-grids, vaspwave.h5 (or WAVECAR) from previous run on the same kgrid
+	input details: KPAR depends on k-grid 
+	output: CONTCAR, OUTCAR, OSZICAR, log, vaspout.h5, waspwave.h5, (WAVECAR)
+	output details: we look at convergence of bfgs loop and scf loops
