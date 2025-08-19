@@ -1,0 +1,131 @@
+import sys
+import argparse
+from simple_slurm import Slurm
+import datetime
+import json
+import yaml
+import subprocess
+import os
+
+class slurm_job:
+    def __init__(self,
+                path: str = "./",
+                job_name: str = "my_job",
+                output: str = "output-%j.out",
+                error: str = "outpur-%j.err",
+                nodes: int = 1,
+                ntasks: int = 1,
+                cpus_per_task: int = 1,
+                mem: str = "1G",
+                time: str = "00:30:00",
+                partition: str = "general",
+                account: str = None,
+                additional_options: dict = None,
+                commands: list = None,
+                module_name: str = "VASP",
+                run_commands: str = "vasp_parallel"):
+        self.options = {
+                "job_name": job_name,
+                "output": output,
+                "nodes": nodes,
+                "ntasks": ntasks,
+                "cpus_per_task": cpus_per_task,
+                "mem": mem,
+                "time": time,
+                "partition": partition,}
+        if error:
+            self.options["error"] = error
+        if account:
+            self.options["account"] = account
+        if additional_options:
+            self.options.update(additional_options)
+        self.slurm = Slurm(**self.options)
+        self.path = path
+        self.module_name = module_name
+        self.run_commands = run_commands
+        self.cmds = ["module load " + self.module_name, self.run_commands]
+        self.add_cmds()
+
+    def add_cmds(self):
+        for cmd in self.cmds:
+            self.slurm.add_cmd(cmd)
+         
+    def write(self):
+        print(self.slurm.__str__())
+        
+    def submit(self):
+        return self.slurm.sbatch()
+
+    def read_config(self, config_path: str):
+        if config_path.endswith(".json"):
+            with open(config_path, "r") as f:
+                config = json.load(f)
+        elif config_path.endswith((".yaml", ".yml")):
+            with open(config_path, "r") as f:
+                config = yaml.safe_load(f)
+        else:
+            raise ValueError("Unsupported file format. Use .json, .yaml, or .yml")
+        print(config)
+        self.options.update(config['slurm'])
+        self.slurm = Slurm(**self.options)
+        self.add_cmds()
+
+    def add_option(self, key, value):
+        self.options[key] = value
+        self.slurm = Slurm(**self.options)
+        self.add_cmds()
+
+    def add_array_from_path(self):
+        incar_dirs = []
+        for dirpath, dirnames, filenames in os.walk(self.path):
+            if 'INCAR' in filenames:
+                incar_dirs.append(dirpath)
+        array_job_len = len(incar_dirs)-1
+        results = 'jobs=('+' '.join(f'"{s}"' for s in incar_dirs)+')'
+        self.options["array"] = "0-"+str(array_job_len)
+        self.options["output"] = "output_%A_%a.out"
+        self.options["error"] = "output_%A_%a.err"
+        self.cmds.insert(0, results)
+        self.cmds.insert(1,"cd ${jobs[$SLURM_ARRAY_TASK_ID]}")
+        self.slurm = Slurm(**self.options)
+        self.add_cmds()
+
+def read_cli_params():
+#    parser = argparse.ArgumentParser(description="Usage: script.py <action> [--path path] [--config] [configure_file]")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("action", nargs="+", help="One or more actions to perform \n(print, submit, array, checkqueue, canceljob, jobinfo).")
+    parser.add_argument("--path", type=str, help="Path to the working directory or resource.")
+    parser.add_argument("--config", type=str, help="Path to a configuration file.")
+    parser.add_argument("--id", type=str, help="Job ID (for details or cancellation).")
+
+    return parser.parse_args()
+
+def main():
+    params = read_cli_params()
+    print(params.action[0])
+    job = slurm_job()
+
+#    job.add_option("array", "1-2")
+    if params.config:
+        job.read_config(params.config)
+    if params.path:
+        print(params.path)
+    action = params.action[0]
+    if action == "print":
+        job.write()
+    if action == 'submit':
+        job.submit()
+    if action == "array":
+        job.add_array_from_path()
+        job.submit()
+    if action == 'checkqueue':
+        subprocess.run(["squeue", "--me",])
+    if params.id:
+        if action == 'canceljob':
+            subprocess.run(["scancel", params.id])
+        if action == 'jobinfo':
+            subprocess.run(["scontrol", "show", "job", params.id])
+
+
+if __name__ == "__main__":
+    main()

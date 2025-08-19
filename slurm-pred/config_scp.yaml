@@ -1,0 +1,11 @@
+slurm:
+        nodes: 1
+        #        ntasks: 1
+        #mem: 1G
+        partition: short
+        time: "1:00:00"
+script:
+        module: vasp/22
+env:
+        type: venv #venv or conda
+        path: /scratch/kwlg019/TESTs/simple-slurm/slurm  

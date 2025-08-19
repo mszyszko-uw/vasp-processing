@@ -1,0 +1,255 @@
+scf:
+  slurm: 
+    time: "0:05:00"
+    nodes: 1
+    ntasks: 28
+    mem_per_cpu: "1GB"
+  cmd: | 
+    ulimit -s unlimited
+    module load  intel-compilers/2023.2.1  impi/2021.10.0   VASP/6.5.1-Dsingle_prec_bse
+    module load Python/3.11.5 matplotlib/3.8.2 h5py/3.11.0
+    
+    START_DIR="$(pwd)"
+    output=$(python3 toolkit.py --step step01 --part dry)
+    cd "$output"
+    mpiexec vasp_std > log
+    
+    cd "$START_DIR"
+    output=$(python3 toolkit.py --step step01 --part scf)
+    cd "$output"
+    mpiexec vasp_std > log
+geo:
+  slurm: 
+    time: "0:20:00"
+    nodes: 1
+    ntasks: 28
+    mem_per_cpu: "2GB"
+  cmd: |  
+    ulimit -s unlimited
+    module load  intel-compilers/2023.2.1  impi/2021.10.0   VASP/6.5.1-Dsingle_prec_bse
+    module load Python/3.11.5 matplotlib/3.8.2 h5py/3.11.0
+    
+    START_DIR="$(pwd)"
+    output=$(python3 toolkit.py --step step02 --part dry)
+    cd "$output"
+    mpiexec vasp_std > log
+    
+    cd "$START_DIR"
+    output=$(python3 toolkit.py --step step02 --part cg_opt)
+    cd "$output"
+    mpiexec vasp_std > log
+    
+    cd "$START_DIR"
+    output=$(python3 toolkit.py --step step02 --part nw_opt)
+    cd "$output"
+    mpiexec vasp_std > log
+    
+    cd "$START_DIR"
+    output=$(python3 toolkit.py --step step02 --part scf)
+    cd "$output"
+    mpiexec vasp_std > log
+    
+    cd "$START_DIR"
+    python3 toolkit.py --step step02 --part report
+bs:
+  slurm: 
+    time: "1:30:00"
+    nodes: 1
+    ntasks: 28
+    mem_per_cpu: "2GB"
+  cmd: |  
+    ulimit -s unlimited
+    module load  intel-compilers/2023.2.1  impi/2021.10.0   VASP/6.5.1-Dsingle_prec_bse
+    module load Python/3.11.5 matplotlib/3.8.2 h5py/3.11.0
+    
+    START_DIR="$(pwd)"  
+    
+    mapfile -t my_paths < <(python3 toolkit.py --step step03 --part dry)
+    for p in "${my_paths[@]}"; do
+      cd "$p"
+      echo "$p"
+      timeout 2m mpiexec vasp_std > log
+      if [[ $? -eq 124 ]]; then
+        echo "VASP run in $p timed out after 5 minutes." >> "$START_DIR/timed_out.log"
+      fi
+      cd "$START_DIR"
+    done
+    
+    cd "$START_DIR"
+    mapfile -t my_paths < <(python3 toolkit.py --step step03 --part cg_opt)
+    for p in "${my_paths[@]}"; do
+      cd "$p"
+      echo "$p"
+      timeout 10m mpiexec vasp_std > log
+      if [[ $? -eq 124 ]]; then
+        echo "VASP run in $p timed out after 5 minutes." >> "$START_DIR/timed_out.log"
+      fi
+      cd "$START_DIR"
+    done
+    
+    cd "$START_DIR"
+    mapfile -t my_paths < <(python3 toolkit.py --step step03 --part nw_opt)
+    for p in "${my_paths[@]}"; do
+      cd "$p"
+      echo "$p"
+      timeout 10m mpiexec vasp_std > log
+      if [[ $? -eq 124 ]]; then
+        echo "VASP run in $p timed out after 5 minutes." >> "$START_DIR/timed_out.log"
+      fi
+      cd "$START_DIR"
+    done
+    
+    cd "$START_DIR"
+    mapfile -t my_paths < <(python3 toolkit.py --step step03 --part scf)
+    for p in "${my_paths[@]}"; do
+      cd "$p"
+      echo "$p"
+      timeout 5m mpiexec vasp_std > log
+      if [[ $? -eq 124 ]]; then
+        echo "VASP run in $p timed out after 5 minutes." >> "$START_DIR/timed_out.log"
+      fi
+      cd "$START_DIR"
+    done
+    
+    cd "$START_DIR"
+    python3 toolkit.py --step step03 --part report  
+dos:
+  slurm: 
+    time: "0:15:00"
+    nodes: 1
+    ntasks: 60
+    mem_per_cpu: "1GB"
+  cmd: |
+    ulimit -s unlimited
+    module load  intel-compilers/2023.2.1  impi/2021.10.0   VASP/6.5.1-Dsingle_prec_bse
+    module load Python/3.11.5 matplotlib/3.8.2 h5py/3.11.0
+    
+    START_DIR="$(pwd)"
+    output=$(python3 toolkit.py --step step04 --part dry)
+    cd "$output"
+    mpiexec vasp_std > log
+    
+    cd "$START_DIR"
+    output=$(python3 toolkit.py --step step04 --part bs)
+    cd "$output"
+    mpiexec vasp_std > log 
+eps:
+  slurm: 
+    time: "0:30:00"
+    nodes: 1
+    ntasks: 72
+    mem_per_cpu: "2GB"
+  cmd: |    
+    ulimit -s unlimited
+    module load  intel-compilers/2023.2.1  impi/2021.10.0   VASP/6.5.1-Dsingle_prec_bse
+    module load Python/3.11.5 matplotlib/3.8.2 h5py/3.11.0
+    
+    START_DIR="$(pwd)"
+    output=$(python3 toolkit.py --step step05 --part dry)
+    cd "$output"
+    mpiexec vasp_std > log
+    
+    cd "$START_DIR"
+    output=$(python3 toolkit.py --step step05 --part dos)
+    cd "$output"
+    mpiexec vasp_std > log
+epsfcn:
+  slurm: 
+    time: "0:20:00"
+    nodes: 1
+    ntasks: 40
+    mem_per_cpu: "1GB"
+  cmd: |
+    ulimit -s unlimited
+    module load  intel-compilers/2023.2.1  impi/2021.10.0   VASP/6.5.1-Dsingle_prec_bse
+    module load Python/3.11.5 matplotlib/3.8.2 h5py/3.11.0
+    
+    START_DIR="$(pwd)"
+    output=$(python3 toolkit.py --step step06 --part dry)
+    cd "$output"
+    mpiexec vasp_ncl > log
+    
+    cd "$START_DIR"
+    output=$(python3 toolkit.py --step step06 --part scf)
+    cd "$output"
+    mpiexec vasp_ncl > log
+meff:
+  slurm: 
+    time: "1:00:00"
+    nodes: 1
+    ntasks: 40
+    mem_per_cpu: "2GB"
+  cmd: |
+    ulimit -s unlimited
+    module load  intel-compilers/2023.2.1  impi/2021.10.0   VASP/6.5.1-Dsingle_prec_bse
+    module load Python/3.11.5 matplotlib/3.8.2 h5py/3.11.0
+    
+    START_DIR="$(pwd)"
+    output=$(python3 toolkit.py --step step07 --part dry)
+    cd "$output"
+    mpiexec vasp_ncl > log
+    
+    cd "$START_DIR"
+    output=$(python3 toolkit.py --step step07 --part cg_opt)
+    cd "$output"
+    mpiexec vasp_ncl > log
+    
+    cd "$START_DIR"
+    output=$(python3 toolkit.py --step step07 --part nw_opt)
+    cd "$output"
+    mpiexec vasp_ncl > log
+    
+    cd "$START_DIR"
+    output=$(python3 toolkit.py --step step07 --part scf)
+    cd "$output"
+    mpiexec vasp_ncl > log
+    
+    cd "$START_DIR"
+    python3 toolkit.py --step step07 --part report > error_rep
+gband:
+  slurm: 
+    time: "0:30:00"
+    nodes: 1
+    ntasks: 60
+    mem_per_cpu: "2GB"
+  cmd: |
+    ulimit -s unlimited
+    module load  intel-compilers/2023.2.1  impi/2021.10.0   VASP/6.5.1-Dsingle_prec_bse
+    module load Python/3.11.5 matplotlib/3.8.2 h5py/3.11.0
+    
+    START_DIR="$(pwd)"
+    output=$(python3 toolkit.py --step step08 --part dry)
+    cd "$output"
+    mpiexec vasp_ncl > log
+    
+    cd "$START_DIR"
+    output=$(python3 toolkit.py --step step08 --part bs)
+    cd "$output"
+    mpiexec vasp_ncl > log
+gexc:
+  slurm: 
+    time: "0:02:00"
+    nodes: 1
+    ntasks: 72
+    mem_per_cpu: "4GB"
+  cmd: |
+    ulimit -s unlimited
+    module load  intel-compilers/2023.2.1  impi/2021.10.0   VASP/6.5.1-Dsingle_prec_bse
+    module load Python/3.11.5 matplotlib/3.8.2 h5py/3.11.0
+    
+    START_DIR="$(pwd)"
+    output=$(python3 toolkit.py --step step09 --part dry)
+    cd "$output"
+    mpiexec vasp_ncl > log
+    
+    cd "$START_DIR"
+    output=$(python3 toolkit.py --step step09 --part dos)
+    cd "$output"
+    mpiexec vasp_ncl > log
+    
+test_1:
+  cmd:
+    sleep 1000
+test_2:
+  cmd:
+    sleep 1000
