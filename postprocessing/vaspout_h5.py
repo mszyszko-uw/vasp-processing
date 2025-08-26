@@ -1,79 +1,96 @@
 import h5py
 import numpy as np
 import matplotlib.pyplot as plt
-from matrix_postprocess import BandStructurePlot, DensityOfStatesPlot
-from matrix_artists import MatrixSculptor, SegmentArranger, KlineEngineer, ProjectionPainter
+from Plotting import BandStructurePlot, DensityOfStatesPlot
+from InformationCollector import InformationCollector
+
 
 class vaspout_h5:
+    """This class knows how to extract relevant information from vaspout.h5
+    and put it into InformationCollector object
+    """
     def __init__(self, vaspout: str):
         self.vaspout = h5py.File(vaspout, 'r')
-        self.folder = vaspout[:vaspout.rindex('/')+1]
+        self.ic = InformationCollector()
+        self.ic.folder = vaspout[:vaspout.rindex('/')+1]
 
-    def read_BS(self, arrangement:str = ''):
+    def read_BS(self):
+        """_summary_
+        """        
         vaspout = self.vaspout
-        Pmat = vaspout['results']['projectors']['par'][:]
-        Emat = vaspout['results']['electron_eigenvalues']['eigenvalues'][:]
-        Occp = vaspout['results']['electron_eigenvalues']['fermiweights'][:]
-        nSeg = vaspout['input']['kpoints']['number_line_segments'][()]/2
-        Lvec = vaspout['input']['poscar']['lattice_vectors'][:]
-        Scal = vaspout['input']['poscar']['scale'][()]
-        Kpts = vaspout['results']['electron_eigenvalues']['kpoint_coords'][:]
-        Klen = vaspout['input']['kpoints']['number_kpoints'][()]
-        Klab = vaspout['input']['kpoints']['labels_kpoints'].asstr()[:]
+        ic = self.ic
+        ic.Pmat = vaspout['results/projectors/par'][:]
+        ic.Emat = vaspout['results/electron_eigenvalues/eigenvalues'][:]
+        ic.Occp = vaspout['results/electron_eigenvalues/fermiweights'][:]
+        ic.nSeg = vaspout['input/kpoints/number_line_segments'][()]/2
+        ic.Lvec = vaspout['input/poscar/lattice_vectors'][:]
+        ic.Scal = vaspout['input/poscar/scale'][()]
+        ic.Kpts = vaspout['results/electron_eigenvalues/kpoint_coords'][:]
+        ic.Klen = vaspout['input/kpoints/number_kpoints'][()]
+        ic.Klab = vaspout['input/kpoints/labels_kpoints'].asstr()[:]
+        ic.ions = vaspout['input/poscar/ion_types'].asstr()[:]
+        ic.num_ions = vaspout['input/poscar/number_ion_types'][:]
 
-        Pmat = np.moveaxis(Pmat, [-2,-1], [0,1])
-        Pmat = SegmentArranger(nSeg, Pmat, arrangement)
+        ic.Pmat = np.moveaxis(ic.Pmat, [-2,-1], [0,1])
+        
 
-        Evalmax = np.max(Emat[Occp>1e-10])
-        Econmin = np.min(Emat[Occp<=1e-10])
-        Egap = Econmin-Evalmax
+        ic.Evalmax = np.max(ic.Emat[ic.Occp>1e-10])
+        ic.Econmin = np.min(ic.Emat[ic.Occp<=1e-10])
+        ic.Egap = ic.Econmin-ic.Evalmax
 
-        Emat = np.moveaxis(Emat, [-2,-1], [0,1])
-        Emat = SegmentArranger(nSeg, Emat, arrangement)
-
-        Kpts, Dvec, Ktik, Klab = KlineEngineer(Lvec, Scal, Kpts, Klen, Klab, nSeg, arrangement)
-
-        return Pmat, Emat, Kpts, Dvec, Ktik, Klab, Evalmax, Egap
+        ic.Emat = np.moveaxis(ic.Emat, [-2,-1], [0,1])
 
 
     def read_DOS(self):
+        """_summary_
+        """        
         vaspout = self.vaspout
+        ic = self.ic
 
-        Vdos = vaspout['results']['electron_dos']['dos'][:]
-        Vdos = np.moveaxis(Vdos, [-1], [0])
+        ic.Vdos = vaspout['results/electron_dos/dos'][:]
+        ic.Vdos = np.moveaxis(ic.Vdos, [-1], [0])
 
-        Pdos = vaspout['results']['electron_dos']['dospar'][:]
-        Pdos = np.moveaxis(Pdos, [-1], [0])
+        ic.Pdos = vaspout['results/electron_dos/dospar'][:]
+        ic.Pdos = np.moveaxis(ic.Pdos, [-1], [0])
 
-        Edos = vaspout['results']['electron_dos']['energies'][:]
+        ic.Edos = vaspout['results/electron_dos/energies'][:]
 
-        Efer = vaspout['results']['electron_dos']['efermi'][()]
-        return Vdos, Pdos, Edos, Efer        
+        ic.Efer = vaspout['results/electron_dos/efermi'][()]
+
+        ic.ions = self.vaspout['input/poscar/ion_types'].asstr()[:]
+        ic.num_ions = self.vaspout['input/poscar/number_ion_types'][:]
+        
+        ic.Emin = np.min(ic.Edos)
+        ic.Emax = np.max(ic.Edos)
+        ic.Ediff = ic.Emax - ic.Emin
     
 
     def plot_BS(self,  
                 description: str = '', 
-                arrangement: str = '', 
-                bands: list = ..., 
-                min_diff=.1, 
-                ax=None, 
-                E0=None, 
-                gnuplot=False, 
-                folder='',
-                save = False,
-                bandnums=False,
-                color = None,
-                mult = 1,
-                alpha = .1
+                kpaths: str = '', 
+                bands: str = '', 
+                **kwargs
                 ):
-        if not folder: folder = self.folder
-        ions = self.vaspout['input']['poscar']['ion_types'].asstr()[:]
-        num_ions = self.vaspout['input']['poscar']['number_ion_types'][:]
-        Pmat, Emat, Kpts, Dvec, Ktik, Klab, Evalmax, Egap = self.read_BS(arrangement)
-        Klab = [lab if lab!='GAMMA' else 'Γ' for lab in Klab]
-        return BandStructurePlot(Pmat, Emat, Kpts, Dvec, Ktik, Klab, Evalmax, Egap, ions, num_ions, 
-                                 description, arrangement, bands, min_diff, ax, E0, gnuplot, folder, save,
-                                 bandnums, color, mult, alpha)
+        """_summary_
+
+        Args:
+            description (str, optional): _description_. Defaults to ''.
+            kpaths (str, optional): _description_. Defaults to ''.
+            bands (str, optional): _description_. Defaults to ''.
+        """        
+        self.read_BS()
+        ic = self.ic
+        ic.description, ic.arrangement, ic.bands = description, kpaths, bands
+        BandStructurePlot(ic, **kwargs)
+
+
+    def plot_BS_default(self):
+        """The default plot parameters
+        """        
+        plt.figure(figsize=(4,8))
+        self.plot_BS('clean', bandnums=True)
+        plt.tight_layout()
+        plt.savefig(self.ic.folder+'BSplot')
     
 
     def plot_DOS(self, 
@@ -81,22 +98,45 @@ class vaspout_h5:
                  ax=None, 
                  E0=None
                  ):
-        ions = self.vaspout['input']['poscar']['ion_types'].asstr()[:]
-        num_ions = self.vaspout['input']['poscar']['number_ion_types'][:]
-        Vdos, Pdos, Edos, Efer = self.read_DOS()
-        return DensityOfStatesPlot(Vdos, Pdos, Edos, Efer, ions, num_ions, 
-                                   description, ax=ax, E0=E0)
+        """_summary_
+
+        Args:
+            description (str, optional): _description_. Defaults to ''.
+            ax (_type_, optional): _description_. Defaults to None.
+            E0 (_type_, optional): _description_. Defaults to None.
+        """        
+        self.read_DOS()
+        self.ic.description = description
+        DensityOfStatesPlot(self.ic, ax=ax, E0=E0)
+
+
+    def plot_DOS_default(self):
+        """_summary_
+        """        
+        plt.figure(figsize=(4,8))
+        self.plot_DOS('total',E0=0)
+        plt.tight_layout()
+        plt.savefig(self.ic.folder+'DOSplot')
     
 
 def plot_BS_DOS(BS:vaspout_h5, 
                 DOS:vaspout_h5, 
                 description='', 
                 arrangement='', 
-                bands: list = ...
+                bands= ''
                 ):
+    """_summary_
+
+    Args:
+        BS (vaspout_h5): _description_
+        DOS (vaspout_h5): _description_
+        description (str, optional): _description_. Defaults to ''.
+        arrangement (str, optional): _description_. Defaults to ''.
+        bands (str, optional): _description_. Defaults to ''.
+    """    
     fig, axes = plt.subplots(ncols=2, sharey=True, gridspec_kw={'width_ratios': [3, 1]})
-    Ediff, Efer = DOS.plot_DOS(description, axes[1])
-    Evalmax, Egap = BS.plot_BS(description, arrangement, bands, Ediff*1e-2, axes[0])
-    axes[1].clear()
-    DOS.plot_DOS(description, ax=axes[1], E0=Evalmax)
+    DOS.read_DOS()
+    BS.plot_BS(description, arrangement, bands, 
+               min_diff=DOS.ic.Ediff*1e-2, ax=axes[0])
+    DOS.plot_DOS(description, ax=axes[1], E0=BS.ic.Evalmax)
     plt.tight_layout()
