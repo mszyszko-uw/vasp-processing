@@ -24,3 +24,4 @@ output=$(python3 toolkit.py --step t_bs --part bs)
 cd "$output"
 mpiexec vasp_std > log
 
+python3 $START_DIR/Postprocessing/BS_post.py
