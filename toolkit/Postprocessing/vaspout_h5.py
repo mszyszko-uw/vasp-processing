@@ -34,6 +34,7 @@ class vaspout_h5:
 
         ic.Pmat = np.moveaxis(ic.Pmat, [-2,-1], [0,1])
         
+        ic.Efer = vaspout['results/electron_dos/efermi'][()]
 
         ic.Evalmax = np.max(ic.Emat[ic.Occp>1e-10])
         ic.Econmin = np.min(ic.Emat[ic.Occp<=1e-10])
@@ -89,7 +90,7 @@ class vaspout_h5:
         """The default plot parameters
         """        
         plt.figure(figsize=(4,8))
-        self.plot_BS('clean', bandnums=True)
+        self.plot_BS('clean', bandnums=True, E0='fermi')
         plt.tight_layout()
         plt.savefig(self.ic.folder+'BSplot')
     

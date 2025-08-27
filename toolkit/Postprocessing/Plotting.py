@@ -92,6 +92,7 @@ def BandStructurePlot(ic: InformationCollector,
     if not folder: folder = ic.folder
 
     if E0 == None: Emat -= Evalmax
+    elif E0 == 'fermi': Emat -= ic.Efer
     else: Emat -= E0
 
     projection = ProjectionPainter(ions, num_ions, description)
