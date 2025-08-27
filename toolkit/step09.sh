@@ -24,3 +24,4 @@ output=$(python3 toolkit.py --step t_dos_so --part dos)
 cd "$output"
 mpiexec vasp_ncl > log
 
+python3 $START_DIR/Postprocessing/DOS_post.py
