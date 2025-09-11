@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 from Plotting import BandStructurePlot, DensityOfStatesPlot
 from InformationCollector import InformationCollector
 
-
 class vaspout_h5:
     """This class knows how to extract relevant information from vaspout.h5
     and put it into InformationCollector object
@@ -14,6 +13,32 @@ class vaspout_h5:
         self.ic = InformationCollector()
         try: self.ic.folder = vaspout[:vaspout.rindex('/')+1]
         except ValueError: self.ic.folder = ''
+
+
+    def extract_magmom(self):
+        vaspout = self.vaspout
+        Mmat: np.ndarray = vaspout['/intermediate/ion_dynamics/magnetism/spin_moments/values'][:]
+        if Mmat.shape[1]==1: print("No magmom in this calculation")
+        elif Mmat.shape[1]==2:
+            magmom = np.sum(Mmat[0,1,...], axis=1)
+        else:
+            x = np.sum(Mmat[0,1,...], axis=1)[:,None]
+            y = np.sum(Mmat[0,2,...], axis=1)[:,None]
+            z = np.sum(Mmat[0,3,...], axis=1)[:,None]
+            magmom = np.concatenate([x,y,z], axis=1)
+
+        with open(f"{self.ic.folder}MAGMOM", "w") as f:
+            f.write("MAGMOM = ")
+            for i, row in enumerate(magmom):
+                # Format row with aligned spacing
+                row_str = " ".join(f"{x:12.8f}" for x in row)
+                if i == 0:
+                    f.write(row_str + " \\\n")
+                elif i == len(magmom)-1:
+                    f.write("         " + row_str + "\n")
+                else:
+                    f.write("         " + row_str + " \\\n")
+
 
     def read_BS(self):
         """_summary_
@@ -98,7 +123,9 @@ class vaspout_h5:
     def plot_DOS(self, 
                  description='', 
                  ax=None, 
-                 E0=None
+                 E0=None,
+                 gnuplot = False,
+                 **kwargs
                  ):
         """_summary_
 
@@ -109,7 +136,7 @@ class vaspout_h5:
         """        
         self.read_DOS()
         self.ic.description = description
-        DensityOfStatesPlot(self.ic, ax=ax, E0=E0)
+        DensityOfStatesPlot(self.ic, ax=ax, E0=E0, gnuplot=gnuplot, **kwargs)
 
 
     def plot_DOS_default(self):
@@ -142,3 +169,69 @@ def plot_BS_DOS(BS:vaspout_h5,
                min_diff=DOS.ic.Ediff*1e-2, ax=axes[0])
     DOS.plot_DOS(description, ax=axes[1], E0=BS.ic.Evalmax)
     plt.tight_layout()
+
+
+if __name__ == "__main__":
+    import argparse
+
+    # Instantiate the parser
+    parser = argparse.ArgumentParser(description='Optional app description')
+    
+    # Required positional argument
+    parser.add_argument('calc_type', type=str,
+                        help='Either band or dos')
+
+    # Optional positional argument
+    parser.add_argument('description', type=str, nargs='?', default='',
+                        help='The description of specific projections to be processed')
+
+    # Optional argument
+    parser.add_argument('--kpaths', type=str, default='',
+                        help='order of kpaths for band')
+    
+    parser.add_argument('--bands', type=str, default='',
+                        help='choice of bands for band')
+    
+    parser.add_argument("--min_diff", type=float, default=0.1,
+                        help="Minimum difference threshold (default: 0.1).")
+
+    parser.add_argument("--ax", default=None,
+                        help="Matplotlib Axes object (default: None).")
+
+    parser.add_argument("--E0", type=float, default=None,
+                        help="Reference energy level (default: None).")
+
+    parser.add_argument("--gnuplot", action="store_true",
+                        help="Enable gnuplot output (default: False).")
+
+    parser.add_argument("--folder", type=str, default="",
+                        help="Output folder (default: '').")
+
+    parser.add_argument("--save", action="store_true",
+                        help="Save plots to file instead of showing (default: False).")
+
+    parser.add_argument("--bandnums", action="store_true",
+                        help="Show band numbers (default: False).")
+
+    parser.add_argument("--color", type=str, default=None,
+                        help="Color for plotting (default: None).")
+
+    parser.add_argument("--mult", type=float, default=1,
+                        help="Scaling multiplier (default: 1).")
+
+    parser.add_argument("--alpha", type=float, default=0.1,
+                        help="Transparency level (default: 0.1).")
+    
+    args = parser.parse_args()
+
+    calc = vaspout_h5()
+    plt.figure(figsize=(4,8))
+
+    if args.calc_type == 'band':
+        calc.plot_BS(**vars(args))
+
+    if args.calc_type == 'dos':
+        calc.plot_DOS(**vars(args))
+
+    plt.tight_layout()
+    plt.savefig(calc.ic.folder+f'{args.calc_type}_plot')

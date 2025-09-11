@@ -50,6 +50,49 @@ def BandToGnuplot(Pmat, Emat, Kpts, Dvec,
             file.write('\n')
 
 
+def DOSToGnuplot(Pdos, Edos, 
+                  projection, description, 
+                  folder=''
+                  ):
+    """_summary_
+
+    Args:
+        Pmat (_type_): _description_
+        Emat (_type_): _description_
+        Kpts (_type_): _description_
+        Dvec (_type_): _description_
+        projection (_type_): _description_
+        bands (_type_): _description_
+        description (_type_): _description_
+        arrangement (_type_): _description_
+        folder (str, optional): _description_. Defaults to ''.
+    """    
+    orbit_names=['s', 'py', 'pz', 'px', 'dxy', 'dyz', 'dz2', 'dxz', 'x2-y2']
+    chosen_orbits = ''
+    orbitals = projection['orbital'] if projection['orbital'] != ... else np.arange(Pdos.shape[-1])
+    directions = projection['direction']
+    ions = projection['ion']
+
+    for i in orbitals:
+        chosen_orbits += ' '+orbit_names[i]
+    with open(folder+description.replace(' ', '_'), 'w') as file:
+        file.write(description+'\n')
+        header = ' Energy     |'
+        # file.write(' Dir 1 Ion 1 px py pz                 : Ion 2 px py pz\n')
+        mat = Edos[:,None]
+        for in_dir, direction in enumerate(directions):
+            stub = f' Dir {in_dir+1} '
+            for in_ion, ion in enumerate(ions):
+                stub += f': Ion {in_ion+1}' + chosen_orbits
+                stub += ' '*(len(orbitals)*13*(in_ion+1) - len(stub)-1)
+                mat = np.concatenate([mat, Pdos[:,direction,ion,orbitals]], axis = 1)
+            if header: header += stub +'|'
+        if header: file.write(header+'\n')
+        header = ''
+        np.savetxt(file, mat, '%12.8f')
+        file.write('\n')
+
+
 def BandStructurePlot(ic: InformationCollector,
                       min_diff=.1, 
                       ax=None, 
@@ -60,7 +103,8 @@ def BandStructurePlot(ic: InformationCollector,
                       bandnums=False, 
                       color = None, 
                       mult=1, 
-                      alpha=.1
+                      alpha=.1,
+                      **kwargs
                       ):
     """_summary_
 
@@ -145,7 +189,8 @@ def BandStructurePlot(ic: InformationCollector,
 
 
 def DensityOfStatesPlot(ic: InformationCollector,
-                        ax=None, E0=None
+                        ax=None, E0=None, gnuplot=False,
+                        **kwargs
                         ):
     """_summary_
 
@@ -168,6 +213,10 @@ def DensityOfStatesPlot(ic: InformationCollector,
         Emax -= E0
 
     projection = ProjectionPainter(ions, num_ions, description)
+
+    if gnuplot: DOSToGnuplot(Pdos, Edos,
+                             projection, description, ic.folder)
+
     Pdos = MatrixSculptor(Pdos, projection)
 
     Vdos = np.sum(Vdos[..., projection['direction']], axis=-1)
