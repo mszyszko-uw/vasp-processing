@@ -4,21 +4,22 @@ from InformationCollector import InformationCollector
 from Artists import MatrixSculptor, ProjectionPainter, SegmentArranger, KlineEngineer, BandWriter
 
 def BandToGnuplot(Pmat, Emat, Kpts, Dvec, 
-                  projection, bands, description, arrangement, 
+                  projection, bands, description, kpaths, 
                   folder=''
                   ):
-    """_summary_
+    """Write a band structure plot to a gnuplot compatible file
 
     Args:
-        Pmat (_type_): _description_
-        Emat (_type_): _description_
-        Kpts (_type_): _description_
-        Dvec (_type_): _description_
-        projection (_type_): _description_
-        bands (_type_): _description_
-        description (_type_): _description_
-        arrangement (_type_): _description_
-        folder (str, optional): _description_. Defaults to ''.
+        Pmat (array_like): PROCAR matrix
+        Emat (array_like): EIGENVAL matrix
+        Kpts (array_like): kpoint_coords
+        Dvec (array_like): distances between kpoints
+        projection (dict): projection dictionary as output by ProjectionPainter
+        bands (str): selected bands e.g. '10,12,14-18 22-26'
+        description (str): the sum of which projections should be plotted e.g. '1,2 Mo z p dxy' means 1st and 2nd Mo atom, in the z direction, all p-orbitals, dxy-orbital 
+        kpaths (str): assuming line mode in band structure calculation 
+                      any ordering of those lines can be selected (including inversion).
+        folder (str, optional): to which folder should the output be saved. If '' (default) uses vaspout.h5's folder. 
     """    
     orbit_names=['s', 'py', 'pz', 'px', 'dxy', 'dyz', 'dz2', 'dxz', 'x2-y2']
     chosen_orbits = ''
@@ -32,7 +33,7 @@ def BandToGnuplot(Pmat, Emat, Kpts, Dvec,
     Dvec = Dvec.copy()
     Dvec -= Dvec[0]
     with open(folder+description.replace(' ', '_'), 'w') as file:
-        file.write(description+' '+arrangement+' '+(str(bands) if len(bands)<Pmat.shape[1] else '')+'\n')
+        file.write(description+' '+kpaths+' '+(str(bands) if len(bands)<Pmat.shape[1] else '')+'\n')
         header = 'k point coordinates x y z             | Distance   | Energy     |'
         # file.write(' Dir 1 Ion 1 px py pz                 : Ion 2 px py pz\n')
         for band in bands:
@@ -54,18 +55,14 @@ def DOSToGnuplot(Pdos, Edos,
                   projection, description, 
                   folder=''
                   ):
-    """_summary_
+    """Write a density of states plot to a gnuplot compatible file
 
     Args:
-        Pmat (_type_): _description_
-        Emat (_type_): _description_
-        Kpts (_type_): _description_
-        Dvec (_type_): _description_
-        projection (_type_): _description_
-        bands (_type_): _description_
-        description (_type_): _description_
-        arrangement (_type_): _description_
-        folder (str, optional): _description_. Defaults to ''.
+        Pdos (_type_): DOSCAR matrix
+        Edos (_type_): electron_dos/energies
+        projection (dict): projection dictionary as output by ProjectionPainter
+        description (str): the sum of which projections should be plotted e.g. '1,2 Mo z p dxy' means 1st and 2nd Mo atom, in the z direction, all p-orbitals, dxy-orbital 
+        folder (str, optional): to which folder should the output be saved. If '' (default) uses vaspout.h5's folder. 
     """    
     orbit_names=['s', 'py', 'pz', 'px', 'dxy', 'dyz', 'dz2', 'dxz', 'x2-y2']
     chosen_orbits = ''
@@ -106,32 +103,32 @@ def BandStructurePlot(ic: InformationCollector,
                       alpha=.1,
                       **kwargs
                       ):
-    """_summary_
+    """Make a band structure plot using data from InformationCollector object
 
     Args:
         ic (InformationCollector): _description_
-        min_diff (float, optional): _description_. Defaults to .1.
-        ax (_type_, optional): _description_. Defaults to None.
-        E0 (_type_, optional): _description_. Defaults to None.
-        gnuplot (bool, optional): _description_. Defaults to False.
-        folder (str, optional): _description_. Defaults to ''.
-        save (bool, optional): _description_. Defaults to False.
-        bandnums (bool, optional): _description_. Defaults to False.
-        color (_type_, optional): _description_. Defaults to None.
-        mult (int, optional): _description_. Defaults to 1.
-        alpha (float, optional): _description_. Defaults to .1.
+        min_diff (float): if band numbers are to be displayed, how far apart they should be to not group them. Defaults to .1
+        ax (plt.axes): to which axis should the plot be rendered. If None (default) uses plt.gca().     
+        E0 (float | str): what energy should be used as 0. str options are ('fermi'). If None (default) will look for valence band maximum. 
+        gnuplot (bool): should the plot be written to a file in gnuplot format. Defaults to False, 
+        folder (str): to which folder should the output(s) be saved. If '' (default) uses vaspout.h5's folder. 
+        save (bool): should the plot be immediately saved. Defaults to False.
+        bandnums (bool): should band numbers be displayed next to the plot. Defaults to False. 
+        color (int | float | str | None): same as in all pyplot figures. Defaults to None 
+        mult (float): the dot size multiplier. Defaults to 1
+        alpha (float): the dot opacity level in range [0, 1]. Defaults to .1
 
     Returns:
         _type_: _description_
     """    
-    Pmat = SegmentArranger(ic.nSeg, ic.Pmat, ic.arrangement)
-    Emat = SegmentArranger(ic.nSeg, ic.Emat, ic.arrangement)
+    Pmat = SegmentArranger(ic.nSeg, ic.Pmat, ic.kpaths)
+    Emat = SegmentArranger(ic.nSeg, ic.Emat, ic.kpaths)
     kline_args = (ic.Lvec, ic.Scal, ic.Kpts, ic.Klen, ic.Klab, ic.nSeg)
-    Kpts, Dvec, Ktik, Klab = KlineEngineer(*kline_args, ic.arrangement)
+    Kpts, Dvec, Ktik, Klab = KlineEngineer(*kline_args, ic.kpaths)
 
     Evalmax  = ic.Evalmax
     Egap, ions, num_ions = ic.Egap, ic.ions, ic.num_ions
-    description, arrangement, bands = ic.description, ic.arrangement, BandWriter(ic.bands)
+    description, kpaths, bands = ic.description, ic.kpaths, BandWriter(ic.bands)
 
     if not folder: folder = ic.folder
 
@@ -144,7 +141,7 @@ def BandStructurePlot(ic: InformationCollector,
     try: Emat = np.sum(Emat[..., projection['direction']], axis=-1)
     except IndexError: Emat = Emat[...,0]
 
-    if gnuplot: BandToGnuplot(Pmat, Emat, Kpts, Dvec, projection, bands, description, arrangement,folder)
+    if gnuplot: BandToGnuplot(Pmat, Emat, Kpts, Dvec, projection, bands, description, kpaths,folder)
 
     Pmat = MatrixSculptor(Pmat, projection)
     if ax==None: ax = plt.gca()
@@ -185,19 +182,20 @@ def BandStructurePlot(ic: InformationCollector,
     ax.set_xticks(Ktik, Klab)
     ax.set_xlim(Dvec[0], Dvec[-1])
     if save: plt.savefig(folder+description.replace(' ', '_'))
-    return Evalmax, Egap
+
+    # return Evalmax, Egap
 
 
 def DensityOfStatesPlot(ic: InformationCollector,
                         ax=None, E0=None, gnuplot=False,
                         **kwargs
                         ):
-    """_summary_
+    """Make a density of states plot using data from InformationCollector object
 
     Args:
         ic (InformationCollector): _description_
-        ax (_type_, optional): _description_. Defaults to None.
-        E0 (_type_, optional): _description_. Defaults to None.
+        ax (plt.axes): to which axis should the plot be rendered. If None (default) uses plt.gca(). 
+        E0 (float | str): what energy should be used as 0. str options are ('fermi'). If None (default) will look for valence band maximum. 
     """    
     Vdos, Pdos, Edos, Efer = ic.Vdos, ic.Pdos, ic.Edos, ic.Efer
     ions, num_ions, description = ic.ions, ic.num_ions, ic.description

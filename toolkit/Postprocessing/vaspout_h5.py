@@ -4,44 +4,55 @@ import matplotlib.pyplot as plt
 from Plotting import BandStructurePlot, DensityOfStatesPlot
 from InformationCollector import InformationCollector
 
+# This script can be used to produce the plots straight from the terminal.
+# For the full description go to the bottom.
+
 class vaspout_h5:
     """This class knows how to extract relevant information from vaspout.h5
-    and put it into InformationCollector object
+    and put it into an InformationCollector object
     """
     def __init__(self, vaspout: str = 'vaspout.h5'):
         self.vaspout = h5py.File(vaspout, 'r')
         self.ic = InformationCollector()
+
+        # Get PATH to directory for conveniance
         try: self.ic.folder = vaspout[:vaspout.rindex('/')+1]
         except ValueError: self.ic.folder = ''
 
 
     def extract_magmom(self):
+        """Get MAGMOM info and put it into a separate file in a format accepted by INCAR
+        """        
         vaspout = self.vaspout
-        Mmat: np.ndarray = vaspout['/intermediate/ion_dynamics/magnetism/spin_moments/values'][:]
-        if Mmat.shape[1]==1: print("No magmom in this calculation")
-        elif Mmat.shape[1]==2:
-            magmom = np.sum(Mmat[0,1,...], axis=1)
-        else:
-            x = np.sum(Mmat[0,1,...], axis=1)[:,None]
-            y = np.sum(Mmat[0,2,...], axis=1)[:,None]
-            z = np.sum(Mmat[0,3,...], axis=1)[:,None]
+        magmom_matrix: np.ndarray = vaspout['/intermediate/ion_dynamics/magnetism/spin_moments/values'][:]
+
+        # Get the full MAGMOM matrix and sum over orbitals
+        if magmom_matrix.shape[1]==1: # ISPIN = 1
+            print("No magmom in this calculation")
+        elif magmom_matrix.shape[1]==2: # ISPIN = 2
+            magmom = np.sum(magmom_matrix[0,1,...], axis=1)
+        else: # lnoncolinear = .true.
+            x = np.sum(magmom_matrix[0,1,...], axis=1)[:,None]
+            y = np.sum(magmom_matrix[0,2,...], axis=1)[:,None]
+            z = np.sum(magmom_matrix[0,3,...], axis=1)[:,None]
             magmom = np.concatenate([x,y,z], axis=1)
 
+        # write the MAGMOM file in the INCAR format
         with open(f"{self.ic.folder}MAGMOM", "w") as f:
             f.write("MAGMOM = ")
             for i, row in enumerate(magmom):
                 # Format row with aligned spacing
                 row_str = " ".join(f"{x:12.8f}" for x in row)
                 if i == 0:
-                    f.write(row_str + " \\\n")
+                    f.write(f"{row_str} \\\n")
                 elif i == len(magmom)-1:
-                    f.write("         " + row_str + "\n")
+                    f.write(f"         {row_str}\n")
                 else:
-                    f.write("         " + row_str + " \\\n")
+                    f.write(f"         {row_str} \\\n")
 
 
     def read_BS(self):
-        """_summary_
+        """Put all relevant band structure information from vaspout to self.ic: InformationCollector
         """        
         vaspout = self.vaspout
         ic = self.ic
@@ -54,39 +65,38 @@ class vaspout_h5:
         ic.Kpts = vaspout['results/electron_eigenvalues/kpoint_coords'][:]
         ic.Klen = vaspout['input/kpoints/number_kpoints'][()]
         ic.Klab = vaspout['input/kpoints/labels_kpoints'].asstr()[:]
+        ic.Efer = vaspout['results/electron_dos/efermi'][()]
         ic.ions = vaspout['input/poscar/ion_types'].asstr()[:]
         ic.num_ions = vaspout['input/poscar/number_ion_types'][:]
 
+        # Rearrange PROCAR and EIGENVAL matrices
+        # into the desired format: ( ..., ndirs, nions, norbits )
+        # and calculate bandgap
         ic.Pmat = np.moveaxis(ic.Pmat, [-2,-1], [0,1])
-        
-        ic.Efer = vaspout['results/electron_dos/efermi'][()]
-
         ic.Evalmax = np.max(ic.Emat[ic.Occp>1e-10])
         ic.Econmin = np.min(ic.Emat[ic.Occp<=1e-10])
         ic.Egap = ic.Econmin-ic.Evalmax
-
         ic.Emat = np.moveaxis(ic.Emat, [-2,-1], [0,1])
 
 
     def read_DOS(self):
-        """_summary_
+        """Put all relevant density of states information from vaspout to self.ic: InformationCollector
         """        
         vaspout = self.vaspout
         ic = self.ic
 
         ic.Vdos = vaspout['results/electron_dos/dos'][:]
-        ic.Vdos = np.moveaxis(ic.Vdos, [-1], [0])
-
         ic.Pdos = vaspout['results/electron_dos/dospar'][:]
+        ic.Edos = vaspout['results/electron_dos/energies'][:]
+        ic.Efer = vaspout['results/electron_dos/efermi'][()]
+        ic.ions = vaspout['input/poscar/ion_types'].asstr()[:]
+        ic.num_ions = vaspout['input/poscar/number_ion_types'][:]
+
+        # Rearrange the matrices to desired format
+        ic.Vdos = np.moveaxis(ic.Vdos, [-1], [0])
         ic.Pdos = np.moveaxis(ic.Pdos, [-1], [0])
 
-        ic.Edos = vaspout['results/electron_dos/energies'][:]
-
-        ic.Efer = vaspout['results/electron_dos/efermi'][()]
-
-        ic.ions = self.vaspout['input/poscar/ion_types'].asstr()[:]
-        ic.num_ions = self.vaspout['input/poscar/number_ion_types'][:]
-        
+        # Calculate energy range
         ic.Emin = np.min(ic.Edos)
         ic.Emax = np.max(ic.Edos)
         ic.Ediff = ic.Emax - ic.Emin
@@ -98,12 +108,35 @@ class vaspout_h5:
                 bands: str = '', 
                 **kwargs
                 ):
-        """_summary_
+        """Make a band structue plot according to string specifiers 
+        and other args that BandStructurePlot accepts
 
         Args:
-            description (str, optional): _description_. Defaults to ''.
-            kpaths (str, optional): _description_. Defaults to ''.
-            bands (str, optional): _description_. Defaults to ''.
+            description (str, optional): the sum of which projections should be plotted. Defaults to ''.
+            kpaths (str, optional): assuming line mode in band structure calculation 
+                                    any ordering of those lines can be selected (including inversion). Defaults to ''.
+            bands (str, optional): which bands are to be displayed in the form of an intuitive string. Defaults to ''.
+
+        Kwargs:
+            ax (plt.axes): to which axis should the plot be rendered. If None (default) uses plt.gca(). 
+            
+            E0 (float | str): what energy should be used as 0. str options are ('fermi'). If None (default) will look for valence band maximum. 
+            
+            folder (str): to which folder should the output(s) be saved. If '' (default) uses vaspout.h5's folder. 
+            
+            save (bool): should the plot be immediately saved. Defaults to False.
+            
+            gnuplot (bool): should the plot be written to a file in gnuplot format. Defaults to False, 
+            
+            bandnums (bool): should band numbers be displayed next to the plot. Defaults to False. 
+            
+            min_diff (float): if band numbers are to be displayed, how far apart they should be to not group them. Defaults to .1
+            
+            color (int | float | str | None): same as in all pyplot figures. Defaults to None 
+            
+            mult (float): the dot size multiplier. Defaults to 1
+            
+            alpha (float): the dot opacity level in range [0, 1]. Defaults to .1
         """        
         self.read_BS()
         ic = self.ic
@@ -112,7 +145,7 @@ class vaspout_h5:
 
 
     def plot_BS_default(self):
-        """The default plot parameters
+        """The default plot, gives overview of the entire band structure
         """        
         plt.figure(figsize=(4,8))
         self.plot_BS('clean', bandnums=True, E0='fermi')
@@ -127,12 +160,14 @@ class vaspout_h5:
                  gnuplot = False,
                  **kwargs
                  ):
-        """_summary_
+        """Make a density of states plot according to string specifiers 
+        and other args that BandStructurePlot accepts
 
         Args:
-            description (str, optional): _description_. Defaults to ''.
-            ax (_type_, optional): _description_. Defaults to None.
-            E0 (_type_, optional): _description_. Defaults to None.
+            description (str, optional): the sum of which projections should be plotted. Defaults to ''.
+            ax (plt.axes): to which axis should the plot be rendered. If None (default) uses plt.gca(). 
+            E0 (float | str): what energy should be used as 0. str options are ('fermi'). If None (default) will look for valence band maximum. 
+            gnuplot (bool): should the plot be written to a file in gnuplot format. Defaults to False, 
         """        
         self.read_DOS()
         self.ic.description = description
@@ -140,7 +175,7 @@ class vaspout_h5:
 
 
     def plot_DOS_default(self):
-        """_summary_
+        """The default plot, shows the entire density of states
         """        
         plt.figure(figsize=(4,8))
         self.plot_DOS('total',E0=0)
@@ -154,7 +189,7 @@ def plot_BS_DOS(BS:vaspout_h5,
                 arrangement='', 
                 bands= ''
                 ):
-    """_summary_
+    """A simple function to produce an elegant band structure and density of states plot
 
     Args:
         BS (vaspout_h5): _description_
@@ -166,28 +201,27 @@ def plot_BS_DOS(BS:vaspout_h5,
     fig, axes = plt.subplots(ncols=2, sharey=True, gridspec_kw={'width_ratios': [3, 1]})
     DOS.read_DOS()
     BS.plot_BS(description, arrangement, bands, 
-               min_diff=DOS.ic.Ediff*1e-2, ax=axes[0])
+               min_diff=DOS.ic.Ediff*1e-2, ax=axes[0], bandnums=True)
     DOS.plot_DOS(description, ax=axes[1], E0=BS.ic.Evalmax)
     plt.tight_layout()
 
 
+# This script can be used to produce the plots straight from the terminal.
 if __name__ == "__main__":
     import argparse
 
     # Instantiate the parser
-    parser = argparse.ArgumentParser(description='Optional app description')
+    parser = argparse.ArgumentParser(description='Make band stucture or density of states plot')
     
     # Required positional argument
     parser.add_argument('calc_type', type=str,
                         help='Either band or dos')
 
-    # Optional positional argument
     parser.add_argument('description', type=str, nargs='?', default='',
-                        help='The description of specific projections to be processed')
+                        help='The description of specific projections to be processed, e.g. "1,2 Mo x p dxy"')
 
-    # Optional argument
     parser.add_argument('--kpaths', type=str, default='',
-                        help='order of kpaths for band')
+                        help='Order and direction of kpaths for band, e.g. "1 2 3 -4"')
     
     parser.add_argument('--bands', type=str, default='',
                         help='choice of bands for band')
@@ -234,4 +268,4 @@ if __name__ == "__main__":
         calc.plot_DOS(**vars(args))
 
     plt.tight_layout()
-    plt.savefig(calc.ic.folder+f'{args.calc_type}_plot')
+    plt.savefig(f'{calc.ic.folder}{args.calc_type}_plot')

@@ -30,7 +30,7 @@ def ProjectionPainter(ions:list, num_ions:list, description:str) -> dict:
     """Translate an intuitive string to select proper elements of the projection matrix
     Args:
         ions (list): Names of ions
-        num_ions (list): Number of ions
+        num_ions (list): Number of each of the ions POSCAR style
         description (str): The string to translate, eg. "Cr down py pz"
 
     Returns:
@@ -56,12 +56,13 @@ def ProjectionPainter(ions:list, num_ions:list, description:str) -> dict:
 
     projection = {'direction':[], 'ion':[], 'orbital':[]}
 
-    description = description.split()
+    description = description.replace(",", " ").split()
 
     iatoms = []
     for i in description:
         if i.isnumeric(): iatoms.append(i)
 
+    # Gather the ion projection list
     for atom in atom_indexes.keys():
         if atom in description:
             if len(iatoms):
@@ -70,13 +71,16 @@ def ProjectionPainter(ions:list, num_ions:list, description:str) -> dict:
             else: projection['ion'] = atom_indexes[atom]
     if projection['ion']==[]: projection['ion'] = ...
 
+    # Gather the direction projection list
     for dir in direction_names.keys():
         if dir in description: projection['direction'] += direction_names[dir]
     if projection['direction']==[]: projection['direction'] = [0]
 
+    # Gather the orbital projection list
     for orb in orbital_names.keys():
         if orb in description: projection['orbital'] += orbital_names[orb]
     if projection['orbital']==[]: projection['orbital'] = ...
+
     return projection
 
 
@@ -93,6 +97,7 @@ def SegmentArranger(nSeg:int, mat: np.ndarray, arrangement: str = ''):
         np.ndarray: Rearranged matrix
     """    
     if arrangement == '': return mat
+
     mat = np.split(mat, nSeg)
     arrangement = arrangement.replace(",", " ").split()
 
@@ -100,6 +105,7 @@ def SegmentArranger(nSeg:int, mat: np.ndarray, arrangement: str = ''):
     for i in arrangement:
         i = int(i)
         if i > 0: 
+            # If the list is still empty set the current segment
             try: newmat = np.concatenate([newmat,mat[i-1]])
             except ValueError: newmat = mat[i-1]
         if i < 0: 
@@ -134,7 +140,8 @@ def KlineEngineer(Lvec, Scal, Kpts, Klen, Klab,
                   nSeg, 
                   arrangement: str = ''
                   ):
-    """_summary_
+    """Takes care of preparing everything, so that the x-axis 
+        of the band structure plot will look as it should
 
     Args:
         Lvec (_type_): _description_
@@ -150,6 +157,8 @@ def KlineEngineer(Lvec, Scal, Kpts, Klen, Klab,
     """
     Kpts = SegmentArranger(nSeg, Kpts, arrangement)
     Dvec = Kpts.copy()
+
+    # calculate reciprocal lattice vectors and constants
     a1,a2,a3 = Lvec*Scal
     bM = np.zeros((3,3))
     V = np.dot(a1, np.cross(a2, a3))
@@ -157,10 +166,13 @@ def KlineEngineer(Lvec, Scal, Kpts, Klen, Klab,
     bM[1,...] = 2*np.pi*np.cross(a3, a1) / V
     bM[2,...] = 2*np.pi*np.cross(a1, a2) / V
     Rval = np.sum(bM**2, axis = 1)**.5
+
+    # calulate the difference beteen subsequent kpoints
     Dvec *= Rval
     Dvec[1:] -= Dvec[:-1]
     Dvec = np.cumsum(np.sum((Dvec)**2, axis = 1)**.5)
 
+    # place k-point labels at the start and end of each segment
     Nkpt = len(Dvec)
     Ktik = []
     for i in range(0,Nkpt//Klen):
