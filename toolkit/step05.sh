@@ -25,3 +25,5 @@ cd "$output"
 mpiexec vasp_std > log
 
 python3 $START_DIR/Postprocessing/DOS_report_post.py
+python3 $START_DIR/Postprocessing/extract_magmom.py
+
