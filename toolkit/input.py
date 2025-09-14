@@ -4,7 +4,6 @@ from defaults import *
 
 # if the variable is not set, the default setting will be used, but this can lead to bad results
 
-CALCULATION_PATH = 'CALC'
 
 INCAR_SETTINGS['SYSTEM'] = 'bulk MoTe2'
 INCAR_SETTINGS['ISMEAR'] = 0
@@ -14,3 +13,8 @@ INCAR_SETTINGS['LMAXMIX'] = 4
 INCAR_SETTINGS['LASPH'] = '.TRUE.'
 
 
+STEPS = {
+    't_scf': '',    
+    't_geo': 't_scf',
+    't_bs': 't_geo'
+}
