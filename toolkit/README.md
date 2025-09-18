@@ -58,18 +58,18 @@ Set paths and global defaults in **`defaults.py`**, e.g.:
 
 ```python
 PSEUDOPOTENTIALS_PATH = "/path/to/vasp/pseudopotentials"
-CALCULATION_PATH = "Calculations"
+CALCULATION_PATH = "your/Calculation/path"
 CPU_PER_NODE = 192
 CPU_PER_SOCKET = 24
 ```
 
 ### 2. Define your calculation
 Specify system-specific overrides in **`input.py`**.  
-At minimum, the `STEPS` dictionary must be defined:
+At minimum, the `STEPS` dictionary must be defined. For each step either the previous one, or a path to the folder with necessary files needs to be provided:
 
 ```python
 STEPS = {
-    't_scf': '',    
+    't_scf': 'path/to/POSCAR',    
     't_geo': 't_scf',
     't_bs': 't_geo'
 }
@@ -120,19 +120,7 @@ Steps and parts correspond to different stages of a workflow.
 
 - Ensure **POSCAR** is always present.  
 - If **POTCAR** is missing, the toolkit will attempt to generate it from recommended pseudopotentials.  
-- **WAVECAR** and **CHGCAR** are required only for NSCF runs (band structure/DOS).  
-- Missing files are handled gracefully with fallbacks where possible.  
-
----
-
-## 📌 Roadmap
-
-- Add job submission script generation (`create_job()`).  
-- Integrate error checking (`check_errors()`).  
-- Implement automated VASP execution (`run_vasp()`).  
-
----
-
-## 📜 License
-
-MIT License. See [LICENSE](LICENSE) for details.  
+- **CHGCAR** is required only for NSCF runs (band structure/DOS).  
+- Missing files are handled with fallbacks where possible.
+- For band structure calculations a **KPOINTS** file containing a path should be present in the previous directory or K_PATH variable in **input.py** need to be specified
+  
