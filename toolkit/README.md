@@ -94,18 +94,12 @@ Steps and parts correspond to different stages of a workflow.
 
 ## 📖 Supported Steps
 
-### Without SOC
-- `t_scf`: Dry run + SCF calculation  
-- `t_geo`: Dry → Conjugate Gradient → Newton → SCF → Report  
+### Steps (non SOC & SOC variants)
+- `t_scf` `t_scf_so`:  SCF calculation  
+- `t_geo` `t_geo_so`: Conjugate Gradient → quasi-Newton → SCF → Report  
 - `t_conv_test`: Convergence studies over ENCUT and k-mesh  
-- `t_bs`: Band structure  
-- `t_dos`: Density of states  
-
-### With SOC
-- `t_scf_so`  
-- `t_geo_so`  
-- `t_bs_so`  
-- `t_dos_so`  
+- `t_bs` `t_bs_so`: Band structure  
+- `t_dos` `t_dos_so`: Density of states    
 
 ---
 
