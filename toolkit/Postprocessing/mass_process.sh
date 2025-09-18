@@ -14,7 +14,7 @@ if [[ -z "$MAX_JOBS" || -z "$parent_folder" || -z "$calc_folder" ]]; then
 fi
 
 # Fixed script to execute inside each subdir
-START_DIR="$(pwd)"
+START_DIR="$(pwd)/${0%/*}"
 SCRIPT="$START_DIR/vaspout_h5.py"
 
 # Function to throttle jobs to MAX_JOBS

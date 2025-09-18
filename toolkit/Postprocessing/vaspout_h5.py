@@ -21,10 +21,19 @@ class vaspout_h5:
 
 
     def extract_magmom(self):
-        """Get MAGMOM info and put it into a separate file in a format accepted by INCAR
+        """Get MAGMOM info and put it in POSCAR (as a comment)
         """        
         vaspout = self.vaspout
+        ic = self.ic
+        ic.ions = vaspout['input/poscar/ion_types'].asstr()[:]
+        ic.num_ions = vaspout['input/poscar/number_ion_types'][:]
+
         magmom_matrix: np.ndarray = vaspout['/intermediate/ion_dynamics/magnetism/spin_moments/values'][:]
+        poscar = vaspout['/original/poscar/content'].asstr()[()].split('\n')
+
+        ions = []
+        for ion, num_ion in zip(ic.ions, ic.num_ions):
+            ions += [ion]*num_ion
 
         # Get the full MAGMOM matrix and sum over orbitals
         if magmom_matrix.shape[1]==1: # ISPIN = 1
@@ -37,18 +46,17 @@ class vaspout_h5:
             z = np.sum(magmom_matrix[0,3,...], axis=1)[:,None]
             magmom = np.concatenate([x,y,z], axis=1)
 
-        # write the MAGMOM file in the INCAR format
-        with open(f"{self.ic.folder}MAGMOM", "w") as f:
-            f.write("MAGMOM = ")
-            for i, row in enumerate(magmom):
-                # Format row with aligned spacing
-                row_str = " ".join(f"{x:12.8f}" for x in row)
-                if i == 0:
-                    f.write(f"{row_str} \\\n")
-                elif i == len(magmom)-1:
-                    f.write(f"         {row_str}\n")
-                else:
-                    f.write(f"         {row_str} \\\n")
+        magflag = -1
+        with open(f"{self.ic.folder}POSCAR", "w") as f:
+            for row in poscar:
+                f.write(f'{row}')
+                if magflag >= 0 and magflag < len(ions):
+                    mags = ' '.join(f"{x:7.3f}" for x in magmom[magflag])
+                    f.write(f'\t # {ions[magflag]} : \t{mags}')
+                    magflag += 1
+                f.write('\n')
+                if 'Direct' in row or 'Cartesian' in row:
+                    magflag = 0
 
 
     def read_BS(self):
@@ -140,7 +148,7 @@ class vaspout_h5:
         """        
         self.read_BS()
         ic = self.ic
-        ic.description, ic.arrangement, ic.bands = description, kpaths, bands
+        ic.description, ic.kpaths, ic.bands = description, kpaths, bands
         BandStructurePlot(ic, **kwargs)
 
 
@@ -187,7 +195,7 @@ def plot_BS_DOS(BS:vaspout_h5,
                 DOS:vaspout_h5, 
                 description='', 
                 arrangement='', 
-                bands= ''
+                bands= '',
                 ):
     """A simple function to produce an elegant band structure and density of states plot
 
@@ -201,8 +209,8 @@ def plot_BS_DOS(BS:vaspout_h5,
     fig, axes = plt.subplots(ncols=2, sharey=True, gridspec_kw={'width_ratios': [3, 1]})
     DOS.read_DOS()
     BS.plot_BS(description, arrangement, bands, 
-               min_diff=DOS.ic.Ediff*1e-2, ax=axes[0], bandnums=True)
-    DOS.plot_DOS(description, ax=axes[1], E0=BS.ic.Evalmax)
+               min_diff=DOS.ic.Ediff*1e-2, ax=axes[0], bandnums=True, E0 = 'fermi')
+    DOS.plot_DOS(description, ax=axes[1])
     plt.tight_layout()
 
 
