@@ -55,15 +55,21 @@ def t_scf(folder, part, previous=''):
 
     elif part == 'scf':
         # SCF run: copy files from dry run, set parallelization, update INCAR
-        scf_run = create_folder(folder, '01_t_scf')
-        dry_run = os.path.join(folder, '00_t_dry')
-        copy_files(dry_run, scf_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'INCAR'])
-        if any(k not in INCAR_SETTINGS for k in ['NCORE', 'NPAR', 'KPAR']):
-            NKPTS, NBANDS = get_NKPTS_NBANDS(os.path.join(dry_run, 'OUTCAR'))
-            out =  add_parallelization(NKPTS, NBANDS)
-            with open(LOGFILE, 'a') as log: log.write(out)
-        modify_incar(os.path.join(scf_run, 'INCAR'), remove= DRY_SETTINGS, add= INCAR_SETTINGS)
-        return os.path.abspath(scf_run)
+        if INCLUDE_DRY_RUN:
+            scf_run = create_folder(folder, '01_t_scf')
+            dry_run = os.path.join(folder, '00_t_dry')
+            copy_files(dry_run, scf_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'INCAR'])
+            if any(k not in INCAR_SETTINGS for k in ['NCORE', 'NPAR', 'KPAR']):
+                NKPTS, NBANDS = get_NKPTS_NBANDS(os.path.join(dry_run, 'OUTCAR'))
+                out =  add_parallelization(NKPTS, NBANDS)
+                with open(LOGFILE, 'a') as log: log.write(out)
+            modify_incar(os.path.join(scf_run, 'INCAR'), remove= DRY_SETTINGS, add= INCAR_SETTINGS)
+            return os.path.abspath(scf_run)
+        else:
+            scf_run = create_folder(folder, '01_t_scf')
+            copy_files(previous, scf_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'INCAR'])
+            modify_incar(os.path.join(scf_run, 'INCAR'), add= INCAR_SETTINGS )
+            return os.path.abspath(scf_run)
 
 
 # ===== Geometry optimization step (non-SOC) =====
@@ -78,20 +84,26 @@ def t_geo(folder, part, previous=os.path.join(CALCULATION_PATH, 't_scf/01_t_scf'
         # Dry run: copy input, add opt + dry settings
         dry_run = create_folder(folder, '00_t_dry')
         copy_files(previous, dry_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'INCAR'])
-        modify_incar(os.path.join(dry_run, 'INCAR'), add= CG_OPT_SETTINGS | DRY_SETTINGS | INCAR_SETTINGS, remove=['KPAR', 'NPAR'])
+        modify_incar(os.path.join(dry_run, 'INCAR'), add= CG_OPT_SETTINGS | DRY_SETTINGS | INCAR_SETTINGS, remove=['KPAR', 'NCORE'])
         return os.path.abspath(dry_run)
 
     elif part == 'cg_opt':
         # Conjugate gradient optimization run
-        geo1_run = create_folder(folder, '01_t_geo')
-        dry_run = os.path.join(folder, '00_t_dry')
-        copy_files(dry_run, geo1_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'INCAR'])
-        if any(k not in INCAR_SETTINGS for k in ['NCORE', 'NPAR', 'KPAR']):
-            NKPTS, NBANDS = get_NKPTS_NBANDS(os.path.join(dry_run, 'OUTCAR'))
-            out =  add_parallelization(NKPTS, NBANDS)
-            with open(LOGFILE, 'a') as log: log.write(out)
-        modify_incar(os.path.join(geo1_run, 'INCAR'), add= INCAR_SETTINGS, remove=DRY_SETTINGS)
-        return os.path.abspath(geo1_run)
+        if INCLUDE_DRY_RUN:
+            geo1_run = create_folder(folder, '01_t_geo')
+            dry_run = os.path.join(folder, '00_t_dry')
+            copy_files(dry_run, geo1_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'INCAR'])
+            if any(k not in INCAR_SETTINGS for k in ['NCORE', 'NPAR', 'KPAR']):
+                NKPTS, NBANDS = get_NKPTS_NBANDS(os.path.join(dry_run, 'OUTCAR'))
+                out =  add_parallelization(NKPTS, NBANDS)
+                with open(LOGFILE, 'a') as log: log.write(out)
+            modify_incar(os.path.join(geo1_run, 'INCAR'), add= INCAR_SETTINGS, remove=DRY_SETTINGS)
+            return os.path.abspath(geo1_run)
+        else:
+            geo1_run = create_folder(folder, '01_t_geo')
+            copy_files(previous, geo1_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'INCAR'])
+            modify_incar(os.path.join(geo1_run, 'INCAR'), add= CG_OPT_SETTINGS | INCAR_SETTINGS)
+            return os.path.abspath(geo1_run)
 
     elif part == 'nw_opt':
         # Newton optimization using CONTCAR → POSCAR
@@ -203,21 +215,26 @@ def t_bs(folder, part, previous=os.path.join(CALCULATION_PATH, f't_geo/03_t_scf'
         # Dry run: set k-path, adjust INCAR
         dry_run = create_folder(folder, '00_t_dry')
         copy_files(previous, dry_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'CHGCAR', 'INCAR'])
-        modify_incar(os.path.join(dry_run, 'INCAR'), add= BS_SETTINGS | DRY_SETTINGS | INCAR_SETTINGS, remove=['KPAR', 'NPAR', 'NBANDS'])
+        modify_incar(os.path.join(dry_run, 'INCAR'), add= BS_SETTINGS | DRY_SETTINGS | INCAR_SETTINGS, remove=['KPAR', 'NCORE', 'NBANDS'])
         return os.path.abspath(dry_run)
 
     elif part == 'bs':
         # Band structure run
-        bs_run = create_folder(folder, '01_t_bs')
-        dry_run = os.path.join(folder, '00_t_dry')
-        copy_files(dry_run, bs_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'INCAR', 'CHGCAR'])
-        if any(k not in INCAR_SETTINGS for k in ['NCORE', 'NPAR', 'KPAR']):
-            NKPTS, NBANDS = get_NKPTS_NBANDS(os.path.join(dry_run, 'OUTCAR'))
-            out =  add_parallelization(NKPTS, math.ceil(NBANDS*BS_BANDS_MULTIPLIER))
-            with open(LOGFILE, 'a') as log: log.write(out)
-        modify_incar(os.path.join(bs_run, 'INCAR'), add= BS_SETTINGS | INCAR_SETTINGS, remove=DRY_SETTINGS)
-        return os.path.abspath(bs_run)
-
+        if INCLUDE_DRY_RUN:
+            bs_run = create_folder(folder, '01_t_bs')
+            dry_run = os.path.join(folder, '00_t_dry')
+            copy_files(dry_run, bs_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'INCAR', 'CHGCAR'])
+            if any(k not in INCAR_SETTINGS for k in ['NCORE', 'NPAR', 'KPAR']):
+                NKPTS, NBANDS = get_NKPTS_NBANDS(os.path.join(dry_run, 'OUTCAR'))
+                out =  add_parallelization(NKPTS, math.ceil(NBANDS*BS_BANDS_MULTIPLIER))
+                with open(LOGFILE, 'a') as log: log.write(out)
+            modify_incar(os.path.join(bs_run, 'INCAR'), add= BS_SETTINGS | INCAR_SETTINGS, remove=DRY_SETTINGS)
+            return os.path.abspath(bs_run)
+        else:
+            bs_run = create_folder(folder, '01_t_bs')
+            copy_files(previous, bs_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'CHGCAR', 'INCAR'])
+            modify_incar(os.path.join(bs_run, 'INCAR'), add= BS_SETTINGS | INCAR_SETTINGS)
+            return os.path.abspath(bs_run)
 
 # ===== Density of states workflow (non-SOC) =====
 # Dry run sets finer kmesh, DOS range; second step does calculation
@@ -247,15 +264,26 @@ def t_dos(folder, part, previous=os.path.join(CALCULATION_PATH, f't_geo/03_t_scf
 
     elif part == 'dos':
         # Density of states run 
-        bs_run = create_folder(folder, '01_t_dos')
-        dry_run = os.path.join(folder, '00_t_dry')
-        copy_files(dry_run, bs_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'INCAR', 'CHGCAR'])
-        if any(k not in INCAR_SETTINGS for k in ['NCORE', 'NPAR', 'KPAR']):
-            NKPTS, NBANDS = get_NKPTS_NBANDS(os.path.join(dry_run, 'OUTCAR'))
-            out =  add_parallelization(NKPTS, math.ceil(NBANDS*DOS_BANDS_MULTIPLIER))
-            with open(LOGFILE, 'a') as log: log.write(out)
-        modify_incar(os.path.join(bs_run, 'INCAR'), add= DOS_SETTINGS | INCAR_SETTINGS, remove=DRY_SETTINGS)
-        return os.path.abspath(bs_run)
+        if INCLUDE_DRY_RUN:
+            bs_run = create_folder(folder, '01_t_dos')
+            dry_run = os.path.join(folder, '00_t_dry')
+            copy_files(dry_run, bs_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'INCAR', 'CHGCAR'])
+            if any(k not in INCAR_SETTINGS for k in ['NCORE', 'NPAR', 'KPAR']):
+                NKPTS, NBANDS = get_NKPTS_NBANDS(os.path.join(dry_run, 'OUTCAR'))
+                out =  add_parallelization(NKPTS, math.ceil(NBANDS*DOS_BANDS_MULTIPLIER))
+                with open(LOGFILE, 'a') as log: log.write(out)
+            modify_incar(os.path.join(bs_run, 'INCAR'), add= DOS_SETTINGS | INCAR_SETTINGS, remove=DRY_SETTINGS)
+            return os.path.abspath(bs_run)
+        else:
+            dos_run = create_folder(folder, '01_t_dos')
+            copy_files(previous, dos_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'CHGCAR', 'INCAR'])
+            # Determines the energy range for DOS calculation, currently e_fermi +- DOS_RANGE
+            if 'EMAX' not in DOS_SETTINGS.keys() or 'EMIN' not in DOS_SETTINGS.keys():
+                with open(LOGFILE, 'a') as log:
+                    log.write('EMIN or/and EMAX not specified, using default VASP values\n')
+            modify_incar(os.path.join(dos_run, 'INCAR'), add= DOS_SETTINGS| INCAR_SETTINGS)
+            return os.path.abspath(dos_run)
+
 
 
 # ===== SCF with SOC =====
@@ -264,22 +292,27 @@ def t_scf_so(folder, part, previous=os.path.join(CALCULATION_PATH, f't_geo/03_t_
     if part == 'dry':
         # Part 1: dry run — prepare folder and adjust INCAR for SOC
         dry_run = create_folder(folder, '00_t_dry_so')
-        copy_files(previous, dry_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'CHGCAR', 'INCAR'])
+        copy_files(previous, dry_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'INCAR'])
         modify_incar(os.path.join(dry_run, 'INCAR'), add= DRY_SETTINGS | SOC_SETTINGS | INCAR_SETTINGS)
         return os.path.abspath(dry_run)
 
     elif part == 'scf':
         # Part 2: SCF run with SOC, using parallelization from dry run
-        scf_run = create_folder(folder, '01_t_scf_so')
-        dry_run = os.path.join(folder, '00_t_dry_so')
-        copy_files(dry_run, scf_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'INCAR', 'CHGCAR'])
-        if any(k not in INCAR_SETTINGS for k in ['NCORE', 'NPAR', 'KPAR']):
-            NKPTS, NBANDS = get_NKPTS_NBANDS(os.path.join(dry_run, 'OUTCAR'))
-            out =  add_parallelization(NKPTS, NBANDS)
-            with open(LOGFILE, 'a') as log: log.write(out)
-        modify_incar(os.path.join(scf_run, 'INCAR'), remove= DRY_SETTINGS, add= INCAR_SETTINGS)
-        return os.path.abspath(scf_run)
-
+        if INCLUDE_DRY_RUN:
+            scf_run = create_folder(folder, '01_t_scf_so')
+            dry_run = os.path.join(folder, '00_t_dry_so')
+            copy_files(dry_run, scf_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'INCAR'])
+            if any(k not in INCAR_SETTINGS for k in ['NCORE', 'NPAR', 'KPAR']):
+                NKPTS, NBANDS = get_NKPTS_NBANDS(os.path.join(dry_run, 'OUTCAR'))
+                out =  add_parallelization(NKPTS, NBANDS)
+                with open(LOGFILE, 'a') as log: log.write(out)
+            modify_incar(os.path.join(scf_run, 'INCAR'), remove= DRY_SETTINGS, add= INCAR_SETTINGS)
+            return os.path.abspath(scf_run)
+        else:
+            scf_run = create_folder(folder, '01_t_scf_so')
+            copy_files(previous, scf_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'INCAR'])
+            modify_incar(os.path.join(scf_run, 'INCAR'), add= SOC_SETTINGS | INCAR_SETTINGS)
+            return os.path.abspath(scf_run)
 
 # ===== Geometry optimization with SOC =====
 # Follows dry run → CG opt → Newton opt → SCF → report
@@ -291,20 +324,26 @@ def t_geo_so(folder, part, previous=os.path.join(CALCULATION_PATH, 't_scf_so/01_
         # Dry run: copy files, adjust INCAR for SOC + optimization
         dry_run = create_folder(folder, '00_t_dry_so')
         copy_files(previous, dry_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'WAVECAR', 'INCAR'])
-        modify_incar(os.path.join(dry_run, 'INCAR'), add= CG_OPT_SETTINGS | DRY_SETTINGS | SOC_SETTINGS | INCAR_SETTINGS, remove=['KPAR', 'NPAR'])
+        modify_incar(os.path.join(dry_run, 'INCAR'), add= CG_OPT_SETTINGS | DRY_SETTINGS | SOC_SETTINGS | INCAR_SETTINGS, remove=['KPAR', 'NCORE'])
         return os.path.abspath(dry_run)
 
     elif part == 'cg_opt':
         # Conjugate-gradient optimization with SOC
-        geo1_run = create_folder(folder, '01_t_geo_so')
-        dry_run = os.path.join(folder, '00_t_dry_so')
-        copy_files(dry_run, geo1_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'WAVECAR', 'INCAR'])
-        if any(k not in INCAR_SETTINGS for k in ['NCORE', 'NPAR', 'KPAR']):
-            NKPTS, NBANDS = get_NKPTS_NBANDS(os.path.join(dry_run, 'OUTCAR'))
-            out =  add_parallelization(NKPTS, NBANDS)
-            with open(LOGFILE, 'a') as log: log.write(out)
-        modify_incar(os.path.join(geo1_run, 'INCAR'), add= SOC_SETTINGS | INCAR_SETTINGS, remove=DRY_SETTINGS)
-        return os.path.abspath(geo1_run)
+        if INCLUDE_DRY_RUN:
+            geo1_run = create_folder(folder, '01_t_geo_so')
+            dry_run = os.path.join(folder, '00_t_dry_so')
+            copy_files(dry_run, geo1_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'WAVECAR', 'INCAR'])
+            if any(k not in INCAR_SETTINGS for k in ['NCORE', 'NPAR', 'KPAR']):
+                NKPTS, NBANDS = get_NKPTS_NBANDS(os.path.join(dry_run, 'OUTCAR'))
+                out =  add_parallelization(NKPTS, NBANDS)
+                with open(LOGFILE, 'a') as log: log.write(out)
+            modify_incar(os.path.join(geo1_run, 'INCAR'), add= SOC_SETTINGS | INCAR_SETTINGS, remove=DRY_SETTINGS)
+            return os.path.abspath(geo1_run)
+        else:
+            geo1_run = create_folder(folder, '01_t_geo_so')
+            copy_files(previous, geo1_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'WAVECAR', 'INCAR'])
+            modify_incar(os.path.join(geo1_run, 'INCAR'), add= CG_OPT_SETTINGS | SOC_SETTINGS | INCAR_SETTINGS)
+            return os.path.abspath(geo1_run)
 
     elif part == 'nw_opt':
         # Newton optimization step with SOC
@@ -337,21 +376,26 @@ def t_bs_so(folder, part, previous=os.path.join(CALCULATION_PATH, 't_geo_so/03_t
         # Dry run: copy files, set k-path, adjust INCAR
         dry_run = create_folder(folder, '00_t_dry_so')
         copy_files(previous, dry_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'CHGCAR', 'INCAR'])
-        modify_incar(os.path.join(dry_run, 'INCAR'), add= BS_SETTINGS | SOC_SETTINGS | DRY_SETTINGS | INCAR_SETTINGS, remove=['KPAR', 'NPAR', 'NBANDS'])
+        modify_incar(os.path.join(dry_run, 'INCAR'), add= BS_SETTINGS | SOC_SETTINGS | DRY_SETTINGS | INCAR_SETTINGS, remove=['KPAR', 'NCORE', 'NBANDS'])
         return os.path.abspath(dry_run)
 
     elif part == 'bs':
         # Band structure run with SOC
-        bs_run = create_folder(folder, '01_t_bs_so')
-        dry_run = os.path.join(folder, '00_t_dry_so')
-        copy_files(dry_run, bs_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'INCAR', 'CHGCAR'])
-        if any(k not in INCAR_SETTINGS for k in ['NCORE', 'NPAR', 'KPAR']):
-            NKPTS, NBANDS = get_NKPTS_NBANDS(os.path.join(dry_run, 'OUTCAR'))
-            out =  add_parallelization(NKPTS, math.ceil(NBANDS*BS_BANDS_MULTIPLIER))
-            with open(LOGFILE, 'a') as log: log.write(out)
-        modify_incar(os.path.join(bs_run, 'INCAR'), add= BS_SETTINGS | SOC_SETTINGS | INCAR_SETTINGS, remove=DRY_SETTINGS)
-        return os.path.abspath(bs_run)
-
+        if INCLUDE_DRY_RUN:
+            bs_run = create_folder(folder, '01_t_bs_so')
+            dry_run = os.path.join(folder, '00_t_dry_so')
+            copy_files(dry_run, bs_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'INCAR', 'CHGCAR'])
+            if any(k not in INCAR_SETTINGS for k in ['NCORE', 'NPAR', 'KPAR']):
+                NKPTS, NBANDS = get_NKPTS_NBANDS(os.path.join(dry_run, 'OUTCAR'))
+                out =  add_parallelization(NKPTS, math.ceil(NBANDS*BS_BANDS_MULTIPLIER))
+                with open(LOGFILE, 'a') as log: log.write(out)
+            modify_incar(os.path.join(bs_run, 'INCAR'), add= BS_SETTINGS | SOC_SETTINGS | INCAR_SETTINGS, remove=DRY_SETTINGS)
+            return os.path.abspath(bs_run)
+        else:
+            bs_run = create_folder(folder, '01_t_bs_so')
+            copy_files(previous, bs_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'CHGCAR', 'INCAR'])
+            modify_incar(os.path.join(bs_run, 'INCAR'), add= BS_SETTINGS | SOC_SETTINGS | INCAR_SETTINGS)
+            return os.path.abspath(bs_run)
 
 # ===== Density of states with SOC =====
 # Dry run prepares kmesh + DOS range, second step runs calculation
@@ -379,16 +423,25 @@ def t_dos_so(folder, part, previous=os.path.join(CALCULATION_PATH, 't_geo_so/03_
 
     elif part == 'dos':
         # DOS calculation run with SOC
-        bs_run = create_folder(folder, '01_t_dos_so')
-        dry_run = os.path.join(folder, '00_t_dry_so')
-        copy_files(dry_run, bs_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'INCAR', 'CHGCAR'])
-        if any(k not in INCAR_SETTINGS for k in ['NCORE', 'NPAR', 'KPAR']):
-            NKPTS, NBANDS = get_NKPTS_NBANDS(os.path.join(dry_run, 'OUTCAR'))
-            out =  add_parallelization(NKPTS, math.ceil(NBANDS*DOS_BANDS_MULTIPLIER))
-            with open(LOGFILE, 'a') as log: log.write(out)
-        modify_incar(os.path.join(bs_run, 'INCAR'), add= INCAR_SETTINGS | DOS_SETTINGS, remove=DRY_SETTINGS)
-        return os.path.abspath(bs_run)
-
+        if INCLUDE_DRY_RUN:
+            bs_run = create_folder(folder, '01_t_dos_so')
+            dry_run = os.path.join(folder, '00_t_dry_so')
+            copy_files(dry_run, bs_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'INCAR', 'CHGCAR'])
+            if any(k not in INCAR_SETTINGS for k in ['NCORE', 'NPAR', 'KPAR']):
+                NKPTS, NBANDS = get_NKPTS_NBANDS(os.path.join(dry_run, 'OUTCAR'))
+                out =  add_parallelization(NKPTS, math.ceil(NBANDS*DOS_BANDS_MULTIPLIER))
+                with open(LOGFILE, 'a') as log: log.write(out)
+            modify_incar(os.path.join(bs_run, 'INCAR'), add= INCAR_SETTINGS | DOS_SETTINGS, remove=DRY_SETTINGS)
+            return os.path.abspath(bs_run)
+        else:
+            dos_run = create_folder(folder, '01_t_dos_so')
+            copy_files(previous, dos_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'CHGCAR', 'INCAR'])
+            # Determines the energy range for DOS calculation, currently e_fermi +- 6 eV, 1 meV resolution
+            if 'EMAX' not in DOS_SETTINGS.keys() or 'EMIN' not in DOS_SETTINGS:
+                with open(LOGFILE, 'a') as log:
+                    log.write('EMIN or/and EMAX not specified, using default VASP values\n')
+            modify_incar(os.path.join(dos_run, 'INCAR'), add= DOS_SETTINGS | SOC_SETTINGS | INCAR_SETTINGS, remove=['KPAR', 'NCORE', 'NBANDS'])
+            return os.path.abspath(dos_run)
 
 
 
@@ -429,7 +482,7 @@ def copy_files(from_path, to_path, files):
                             else:
                                 if K_PATH:
                                     log.write('KPOINTS generated from K_PATH\n')
-                                    create_kpath_standard(dst, K_PATH, KPOINTS)
+                                    create_kpath_standard(dst, K_PATH, POINTS_PER_SEGMENT)
                                 else:
                                     raise RuntimeError("KPOINTS or K_PATH for band structure not provided -> Stopping the toolkit\n")
                         else:
@@ -655,18 +708,6 @@ def create_kpath_standard(file, k_points, points):
             f.write(f'  {p1[0]:.5f}  {p1[1]:.5f}  {p1[2]:.5f}    1\n')
             f.write(f'  {p2[0]:.5f}  {p2[1]:.5f}  {p2[2]:.5f}    1\n\n')
 
-# BLANK
-def create_job():
-    pass
-
-# BLANK
-def run_vasp():
-    pass
-
-# BLANK
-def check_errors():
-    pass
-
 # Exctracts NKPTS and NBANDS from OUTCAR - for use after dry run
 def get_NKPTS_NBANDS(file):
     nkpts, nbands = None, None
@@ -684,12 +725,6 @@ def get_NKPTS_NBANDS(file):
                             nbands = int(parts[i+1])
                 break
     return nkpts, nbands
-
-# Function I used for testing something, maybe usefull later
-def find_last_step(path):
-    folders = os.listdir(path)
-    folder_dict = {f:int(f.split('_')[0]) for f in folders}
-    return max(folder_dict, key=folder_dict.get)
 
 
 def divisors(n):
