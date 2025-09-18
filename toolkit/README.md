@@ -1,0 +1,138 @@
+# VASP Workflow Toolkit
+
+This repository provides a **Python-based toolkit** for setting up, managing, and analyzing **VASP density functional theory (DFT) calculations**.  
+The central script, `toolkit.py`, automates common VASP workflows such as SCF runs, geometry optimization, band structure, density of states, and convergence tests (with and without spin–orbit coupling).
+
+---
+
+## 📂 Repository Structure
+
+```
+.
+├── toolkit.py   # Main workflow manager
+├── input.py     # User-specific calculation settings
+├── defaults.py  # Default parameters (used if not overridden in input.py)
+```
+
+---
+
+## ⚙️ Features
+
+- **Step-based workflow control**: each stage (SCF, geometry optimization, DOS, etc.) is modular.  
+- **Supports SOC & non-SOC workflows**.  
+- **Convergence tests** over ENCUT and k-meshes.  
+- **Automatic INCAR handling**:
+  - Adds/removes tags depending on the step.  
+  - Generates missing input files when possible.  
+- **POTCAR management** from recommended pseudopotentials.  
+- **Automatic parallelization settings** (`NCORE`, `KPAR`).  
+- **Report generation**:
+  - PDF summaries for geometry optimization and SCF runs.  
+  - CSV convergence reports.  
+
+---
+
+## 🚀 Installation
+
+Clone the repository and make sure the dependencies are installed:
+
+```bash
+git clone https://github.com/yourusername/vasp-toolkit.git
+cd vasp-toolkit
+
+pip install -r requirements.txt
+```
+
+### Dependencies
+- Python ≥ 3.8  
+- `numpy`  
+- `matplotlib`  
+- `h5py`  
+
+---
+
+## 📝 Usage
+
+### 1. Configure defaults
+Set paths and global defaults in **`defaults.py`**, e.g.:
+
+```python
+PSEUDOPOTENTIALS_PATH = "/path/to/vasp/pseudopotentials"
+CALCULATION_PATH = "Calculations"
+CPU_PER_NODE = 192
+CPU_PER_SOCKET = 24
+```
+
+### 2. Define your calculation
+Specify system-specific overrides in **`input.py`**.  
+At minimum, the `STEPS` dictionary must be defined:
+
+```python
+STEPS = {
+    't_scf': '',    
+    't_geo': 't_scf',
+    't_bs': 't_geo'
+}
+
+INCAR_SETTINGS['SYSTEM'] = 'bulk MoTe2'
+INCAR_SETTINGS['ISMEAR'] = 0
+INCAR_SETTINGS['SIGMA'] = 0.05
+```
+
+### 3. Run a workflow step
+Use `toolkit.py` with `--step` and `--part`:
+
+```bash
+python toolkit.py --step t_scf --part dry
+python toolkit.py --step t_scf --part scf
+python toolkit.py --step t_geo --part cg_opt
+```
+
+Steps and parts correspond to different stages of a workflow.
+
+---
+
+## 📖 Supported Steps
+
+### Without SOC
+- `t_scf`: Dry run + SCF calculation  
+- `t_geo`: Dry → Conjugate Gradient → Newton → SCF → Report  
+- `t_conv_test`: Convergence studies over ENCUT and k-mesh  
+- `t_bs`: Band structure  
+- `t_dos`: Density of states  
+
+### With SOC
+- `t_scf_so`  
+- `t_geo_so`  
+- `t_bs_so`  
+- `t_dos_so`  
+
+---
+
+## 📊 Reports
+
+- **PDF reports** include stress, forces, and SCF convergence plots.  
+- **Convergence reports** (CSV) summarize lattice constants, forces, energy, and convergence flags for different ENCUT and k-mesh values.  
+
+---
+
+## ⚠️ Notes
+
+- Ensure **POSCAR** is always present.  
+- If **POTCAR** is missing, the toolkit will attempt to generate it from recommended pseudopotentials.  
+- **WAVECAR** and **CHGCAR** are required only for NSCF runs (band structure/DOS).  
+- Missing files are handled gracefully with fallbacks where possible.  
+
+---
+
+## 📌 Roadmap
+
+- Add job submission script generation (`create_job()`).  
+- Integrate error checking (`check_errors()`).  
+- Implement automated VASP execution (`run_vasp()`).  
+
+---
+
+## 📜 License
+
+MIT License. See [LICENSE](LICENSE) for details.  
