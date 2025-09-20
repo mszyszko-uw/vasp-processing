@@ -49,7 +49,8 @@ class vaspout_h5:
         magflag = -1
         with open(f"{self.ic.folder}POSCAR", "w") as f:
             for row in poscar:
-                f.write(f'{row}')
+                row = row.replace('\r','').replace('\n','')
+                f.write(f"{row}")
                 if magflag >= 0 and magflag < len(ions):
                     mags = ' '.join(f"{x:7.3f}" for x in magmom[magflag])
                     f.write(f'\t # {ions[magflag]} : \t{mags}')
@@ -81,8 +82,8 @@ class vaspout_h5:
         # into the desired format: ( ..., ndirs, nions, norbits )
         # and calculate bandgap
         ic.Pmat = np.moveaxis(ic.Pmat, [-2,-1], [0,1])
-        ic.Evalmax = np.max(ic.Emat[ic.Occp>1e-10])
-        ic.Econmin = np.min(ic.Emat[ic.Occp<=1e-10])
+        ic.Evalmax = np.max(ic.Emat[ic.Occp>1e-3])
+        ic.Econmin = np.min(ic.Emat[ic.Occp<=1e-3])
         ic.Egap = ic.Econmin-ic.Evalmax
         ic.Emat = np.moveaxis(ic.Emat, [-2,-1], [0,1])
 
@@ -149,6 +150,7 @@ class vaspout_h5:
         self.read_BS()
         ic = self.ic
         ic.description, ic.kpaths, ic.bands = description, kpaths, bands
+        if 'custom_ions' in kwargs.keys(): ic.ions = kwargs['custom_ions']
         BandStructurePlot(ic, **kwargs)
 
 
