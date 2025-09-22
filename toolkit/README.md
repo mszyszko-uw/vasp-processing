@@ -32,17 +32,6 @@ The central script, `toolkit.py`, automates common VASP workflows such as SCF ru
 
 ---
 
-## 🚀 Installation
-
-Clone the repository and make sure the dependencies are installed:
-
-```bash
-git clone https://github.com/yourusername/vasp-toolkit.git
-cd vasp-toolkit
-
-pip install -r requirements.txt
-```
-
 ### Dependencies
 - Python ≥ 3.8  
 - `numpy`  
