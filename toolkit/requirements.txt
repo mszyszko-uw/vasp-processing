@@ -1,2 +1,5 @@
 PyYAML==6.0.2
 simple-slurm==0.3.6
+numpy
+matplotlib
+h5py
