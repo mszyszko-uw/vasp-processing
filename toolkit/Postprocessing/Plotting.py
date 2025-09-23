@@ -172,7 +172,7 @@ def BandStructurePlot(ic: InformationCollector,
                    alpha=alpha, label=description, c=color)
     else: ax.plot(Dvec, Emat, color=color, linewidth=1, label=description)
 
-    ax.vlines(Ktik[1:-1], [Emat.min()]*(len(Ktik)-2), [Emat.max()]*(len(Ktik)-2),
+    ax.vlines(Ktik[1:-1], [Emat.min()-100]*(len(Ktik)-2), [Emat.max()+100]*(len(Ktik)-2),
             color="black", linestyle=":")
     ax.axhline(0, color="black", linestyle=":")
     if E0==None:
@@ -181,6 +181,7 @@ def BandStructurePlot(ic: InformationCollector,
 
     ax.set_xticks(Ktik, Klab)
     ax.set_xlim(Dvec[0], Dvec[-1])
+    ax.set_ylim(Emat.min(), Emat.max())
     if save: plt.savefig(folder+description.replace(' ', '_'))
 
     # return Evalmax, Egap
