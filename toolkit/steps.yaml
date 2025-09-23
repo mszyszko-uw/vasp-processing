@@ -10,14 +10,15 @@ scf:
     module load Python/3.11.5 matplotlib/3.8.2 h5py/3.11.0
     
     START_DIR="$(pwd)"
-    output=$(python3 toolkit.py --step step01 --part dry)
+    output=$(python3 toolkit.py --step t_scf --part dry)
     cd "$output"
     mpiexec vasp_std > log
     
     cd "$START_DIR"
-    output=$(python3 toolkit.py --step step01 --part scf)
+    output=$(python3 toolkit.py --step t_scf --part scf)
     cd "$output"
     mpiexec vasp_std > log
+    
 geo:
   slurm: 
     time: "0:20:00"
@@ -30,28 +31,29 @@ geo:
     module load Python/3.11.5 matplotlib/3.8.2 h5py/3.11.0
     
     START_DIR="$(pwd)"
-    output=$(python3 toolkit.py --step step02 --part dry)
+    output=$(python3 toolkit.py --step t_geo --part dry)
     cd "$output"
     mpiexec vasp_std > log
     
     cd "$START_DIR"
-    output=$(python3 toolkit.py --step step02 --part cg_opt)
+    output=$(python3 toolkit.py --step t_geo --part cg_opt)
     cd "$output"
     mpiexec vasp_std > log
     
     cd "$START_DIR"
-    output=$(python3 toolkit.py --step step02 --part nw_opt)
+    output=$(python3 toolkit.py --step t_geo --part nw_opt)
     cd "$output"
     mpiexec vasp_std > log
     
     cd "$START_DIR"
-    output=$(python3 toolkit.py --step step02 --part scf)
+    output=$(python3 toolkit.py --step t_geo --part scf)
     cd "$output"
     mpiexec vasp_std > log
     
     cd "$START_DIR"
-    python3 toolkit.py --step step02 --part report
-bs:
+    python3 toolkit.py --step t_geo --part report
+    
+conv_test:
   slurm: 
     time: "1:30:00"
     nodes: 1
@@ -64,56 +66,45 @@ bs:
     
     START_DIR="$(pwd)"  
     
-    mapfile -t my_paths < <(python3 toolkit.py --step step03 --part dry)
+    mapfile -t my_paths < <(python3 toolkit.py --step t_conv_test --part dry)
     for p in "${my_paths[@]}"; do
       cd "$p"
       echo "$p"
-      timeout 2m mpiexec vasp_std > log
-      if [[ $? -eq 124 ]]; then
-        echo "VASP run in $p timed out after 5 minutes." >> "$START_DIR/timed_out.log"
-      fi
+      mpiexec vasp_std > log
       cd "$START_DIR"
     done
     
     cd "$START_DIR"
-    mapfile -t my_paths < <(python3 toolkit.py --step step03 --part cg_opt)
+    mapfile -t my_paths < <(python3 toolkit.py --step t_conv_test--part cg_opt)
     for p in "${my_paths[@]}"; do
       cd "$p"
       echo "$p"
-      timeout 10m mpiexec vasp_std > log
-      if [[ $? -eq 124 ]]; then
-        echo "VASP run in $p timed out after 5 minutes." >> "$START_DIR/timed_out.log"
-      fi
+      mpiexec vasp_std > log
       cd "$START_DIR"
     done
     
     cd "$START_DIR"
-    mapfile -t my_paths < <(python3 toolkit.py --step step03 --part nw_opt)
+    mapfile -t my_paths < <(python3 toolkit.py --step t_conv_test --part nw_opt)
     for p in "${my_paths[@]}"; do
       cd "$p"
       echo "$p"
-      timeout 10m mpiexec vasp_std > log
-      if [[ $? -eq 124 ]]; then
-        echo "VASP run in $p timed out after 5 minutes." >> "$START_DIR/timed_out.log"
-      fi
+      mpiexec vasp_std > log
       cd "$START_DIR"
     done
     
     cd "$START_DIR"
-    mapfile -t my_paths < <(python3 toolkit.py --step step03 --part scf)
+    mapfile -t my_paths < <(python3 toolkit.py --step t_conv_test --part scf)
     for p in "${my_paths[@]}"; do
       cd "$p"
       echo "$p"
-      timeout 5m mpiexec vasp_std > log
-      if [[ $? -eq 124 ]]; then
-        echo "VASP run in $p timed out after 5 minutes." >> "$START_DIR/timed_out.log"
-      fi
+      mpiexec vasp_std > log
       cd "$START_DIR"
     done
     
     cd "$START_DIR"
-    python3 toolkit.py --step step03 --part report  
-dos:
+    python3 toolkit.py --step t_conv_test --part report
+
+bs:
   slurm: 
     time: "0:15:00"
     nodes: 1
@@ -125,15 +116,16 @@ dos:
     module load Python/3.11.5 matplotlib/3.8.2 h5py/3.11.0
     
     START_DIR="$(pwd)"
-    output=$(python3 toolkit.py --step step04 --part dry)
+    output=$(python3 toolkit.py --step t_bs --part dry)
     cd "$output"
     mpiexec vasp_std > log
     
     cd "$START_DIR"
-    output=$(python3 toolkit.py --step step04 --part bs)
+    output=$(python3 toolkit.py --step t_bs --part bs)
     cd "$output"
     mpiexec vasp_std > log 
-eps:
+    
+dos:
   slurm: 
     time: "0:30:00"
     nodes: 1
@@ -145,15 +137,16 @@ eps:
     module load Python/3.11.5 matplotlib/3.8.2 h5py/3.11.0
     
     START_DIR="$(pwd)"
-    output=$(python3 toolkit.py --step step05 --part dry)
+    output=$(python3 toolkit.py --step t_dos --part dry)
     cd "$output"
     mpiexec vasp_std > log
     
     cd "$START_DIR"
-    output=$(python3 toolkit.py --step step05 --part dos)
+    output=$(python3 toolkit.py --step t_dos --part dos)
     cd "$output"
     mpiexec vasp_std > log
-epsfcn:
+    
+scf_so:
   slurm: 
     time: "0:20:00"
     nodes: 1
@@ -165,15 +158,16 @@ epsfcn:
     module load Python/3.11.5 matplotlib/3.8.2 h5py/3.11.0
     
     START_DIR="$(pwd)"
-    output=$(python3 toolkit.py --step step06 --part dry)
+    output=$(python3 toolkit.py --step t_scf_so --part dry)
     cd "$output"
     mpiexec vasp_ncl > log
     
     cd "$START_DIR"
-    output=$(python3 toolkit.py --step step06 --part scf)
+    output=$(python3 toolkit.py --step t_scf_so --part scf)
     cd "$output"
     mpiexec vasp_ncl > log
-meff:
+    
+geo_so:
   slurm: 
     time: "1:00:00"
     nodes: 1
@@ -185,28 +179,29 @@ meff:
     module load Python/3.11.5 matplotlib/3.8.2 h5py/3.11.0
     
     START_DIR="$(pwd)"
-    output=$(python3 toolkit.py --step step07 --part dry)
+    output=$(python3 toolkit.py --step t_geo_so --part dry)
     cd "$output"
     mpiexec vasp_ncl > log
     
     cd "$START_DIR"
-    output=$(python3 toolkit.py --step step07 --part cg_opt)
+    output=$(python3 toolkit.py --step t_geo_so --part cg_opt)
     cd "$output"
     mpiexec vasp_ncl > log
     
     cd "$START_DIR"
-    output=$(python3 toolkit.py --step step07 --part nw_opt)
+    output=$(python3 toolkit.py --step t_geo_so --part nw_opt)
     cd "$output"
     mpiexec vasp_ncl > log
     
     cd "$START_DIR"
-    output=$(python3 toolkit.py --step step07 --part scf)
+    output=$(python3 toolkit.py --step t_geo_so --part scf)
     cd "$output"
     mpiexec vasp_ncl > log
     
     cd "$START_DIR"
-    python3 toolkit.py --step step07 --part report > error_rep
-gband:
+    python3 toolkit.py --step t_geo_so --part report > error_rep
+    
+bs_so:
   slurm: 
     time: "0:30:00"
     nodes: 1
@@ -218,15 +213,16 @@ gband:
     module load Python/3.11.5 matplotlib/3.8.2 h5py/3.11.0
     
     START_DIR="$(pwd)"
-    output=$(python3 toolkit.py --step step08 --part dry)
+    output=$(python3 toolkit.py --step t_bs_so --part dry)
     cd "$output"
     mpiexec vasp_ncl > log
     
     cd "$START_DIR"
-    output=$(python3 toolkit.py --step step08 --part bs)
+    output=$(python3 toolkit.py --step t_bs_so --part bs)
     cd "$output"
     mpiexec vasp_ncl > log
-gexc:
+    
+dos_so:
   slurm: 
     time: "0:02:00"
     nodes: 1
@@ -238,12 +234,12 @@ gexc:
     module load Python/3.11.5 matplotlib/3.8.2 h5py/3.11.0
     
     START_DIR="$(pwd)"
-    output=$(python3 toolkit.py --step step09 --part dry)
+    output=$(python3 toolkit.py --step t_dos_so --part dry)
     cd "$output"
     mpiexec vasp_ncl > log
     
     cd "$START_DIR"
-    output=$(python3 toolkit.py --step step09 --part dos)
+    output=$(python3 toolkit.py --step t_dos_so --part dos)
     cd "$output"
     mpiexec vasp_ncl > log
     
