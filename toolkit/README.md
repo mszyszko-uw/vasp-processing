@@ -33,7 +33,7 @@ The central script, `toolkit.py`, automates common VASP workflows such as SCF ru
 ---
 
 ### Dependencies
-- Python ≥ 3.8  
+- Python ≥ 3.9  
 - `numpy`  
 - `matplotlib`  
 - `h5py`  
@@ -79,16 +79,28 @@ python toolkit.py --step t_geo --part cg_opt
 
 Steps and parts correspond to different stages of a workflow.
 
+Alternatively you can you the functions corresponding to specific steps in explicitly in python:
+
+```python
+path_to_calc = t_bs(folder="your/calc/dir", part="scf", previous="your/scf/folder") 
+```
+This way of using the toolkit can be beneficial for preprocessing files for multiple similar calculations at the same time.
+However, this implementation still needs the settings to be defined as previously described.
+
 ---
 
 ## 📖 Supported Steps
 
 ### Steps (non SOC & SOC variants)
-- `t_scf` `t_scf_so`:  SCF calculation  
-- `t_geo` `t_geo_so`: Conjugate Gradient → quasi-Newton → SCF → Report  
-- `t_conv_test`: Convergence studies over ENCUT and k-mesh  
-- `t_bs` `t_bs_so`: Band structure  
-- `t_dos` `t_dos_so`: Density of states    
+- `t_scf`: non SOC SCF calculation, includes parts: 'dry' & 'scf'
+- `t_scf_so`:  SOC SCF calculation, includes parts: 'dry' & 'scf'  
+- `t_geo`: non SOC geometry optimisation (Conjugate Gradient → quasi-Newton → SCF), includes parts: 'dry', 'cg_opt', 'nw_opt', 'scf' & 'report'
+- `t_geo_so`: SOC geometry optimisation (Conjugate Gradient → quasi-Newton → SCF), includes parts: 'dry', 'cg_opt', 'nw_opt', 'scf' & 'report'
+- `t_conv_test`: non SOC convergence studies (with geometry optimisation) over ENCUT and k-mesh, includes parts: 'dry', 'cg_opt', 'nw_opt', 'scf' & 'report'  
+- `t_bs`: non SOC band structure, includes parts: 'dry', 'bs'
+- `t_bs_so`: SOC band structure, includes parts: 'dry', 'bs'  
+- `t_dos`: non SOC density of states (DOS), includes parts: 'dry', 'dos'
+- `t_dos_so`: SOC density of states (DOS), includes parts: 'dry', 'dos'   
 
 ---
 
