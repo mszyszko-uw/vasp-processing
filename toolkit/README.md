@@ -92,15 +92,15 @@ However, this implementation still needs the settings to be defined as previousl
 ## 📖 Supported Steps
 
 ### Steps (non SOC & SOC variants)
-- `t_scf`: non SOC SCF calculation, includes parts: 'dry' & 'scf'
-- `t_scf_so`:  SOC SCF calculation, includes parts: 'dry' & 'scf'  
-- `t_geo`: non SOC geometry optimisation (Conjugate Gradient → quasi-Newton → SCF), includes parts: 'dry', 'cg_opt', 'nw_opt', 'scf' & 'report'
-- `t_geo_so`: SOC geometry optimisation (Conjugate Gradient → quasi-Newton → SCF), includes parts: 'dry', 'cg_opt', 'nw_opt', 'scf' & 'report'
-- `t_conv_test`: non SOC convergence studies (with geometry optimisation) over ENCUT and k-mesh, includes parts: 'dry', 'cg_opt', 'nw_opt', 'scf' & 'report'  
-- `t_bs`: non SOC band structure, includes parts: 'dry', 'bs'
-- `t_bs_so`: SOC band structure, includes parts: 'dry', 'bs'  
-- `t_dos`: non SOC density of states (DOS), includes parts: 'dry', 'dos'
-- `t_dos_so`: SOC density of states (DOS), includes parts: 'dry', 'dos'   
+- `t_scf`: non SOC SCF calculation, includes parts: `dry` & `scf`
+- `t_scf_so`:  SOC SCF calculation, includes parts: `dry` & `scf`  
+- `t_geo`: non SOC geometry optimisation (Conjugate Gradient → quasi-Newton → SCF), includes parts: `dry`, `cg_opt`, `nw_opt`, `scf` & `report`
+- `t_geo_so`: SOC geometry optimisation (Conjugate Gradient → quasi-Newton → SCF), includes parts: `dry`, `cg_opt`, `nw_opt`, `scf` & `report`
+- `t_conv_test`: non SOC convergence studies (with geometry optimisation) over ENCUT and k-mesh, includes parts: `dry`, `cg_opt`, `nw_opt`, `scf` & `report`  
+- `t_bs`: non SOC band structure, includes parts: `dry`, `bs`
+- `t_bs_so`: SOC band structure, includes parts: `dry`, `bs`  
+- `t_dos`: non SOC density of states (DOS), includes parts: `dry`, `dos`
+- `t_dos_so`: SOC density of states (DOS), includes parts: `dry`, `dos`   
 
 ---
 
