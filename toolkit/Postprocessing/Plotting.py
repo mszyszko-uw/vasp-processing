@@ -101,6 +101,7 @@ def BandStructurePlot(ic: InformationCollector,
                       color = None, 
                       mult=1, 
                       alpha=.1,
+                      linestyle='-',
                       **kwargs
                       ):
     """Make a band structure plot using data from InformationCollector object
@@ -170,7 +171,7 @@ def BandStructurePlot(ic: InformationCollector,
         ax.plot(Dvec, Emat, color="black", linewidth=0.5, linestyle=':')
         ax.scatter(np.stack([Dvec]*Emat.shape[1], axis=1), Emat, np.abs(Pmat)*100*mult, 
                    alpha=alpha, label=description, c=color)
-    else: ax.plot(Dvec, Emat, color=color, linewidth=1, label=description)
+    else: ax.plot(Dvec, Emat, color=color, linewidth=1, label=description, linestyle=linestyle)
 
     ax.vlines(Ktik[1:-1], [Emat.min()-100]*(len(Ktik)-2), [Emat.max()+100]*(len(Ktik)-2),
             color="black", linestyle=":")

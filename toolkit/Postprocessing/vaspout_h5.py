@@ -20,7 +20,7 @@ class vaspout_h5:
         except ValueError: self.ic.folder = ''
 
 
-    def extract_magmom(self):
+    def extract_magmom(self, n=3):
         """Get MAGMOM info and put it in POSCAR (as a comment)
         """        
         vaspout = self.vaspout
@@ -52,7 +52,7 @@ class vaspout_h5:
                 row = row.replace('\r','').replace('\n','')
                 f.write(f"{row}")
                 if magflag >= 0 and magflag < len(ions):
-                    mags = ' '.join(f"{x:7.3f}" for x in magmom[magflag])
+                    mags = ' '.join(f"{x:9.5f}" for x in magmom[magflag])
                     f.write(f'\t # {ions[magflag]} : \t{mags}')
                     magflag += 1
                 f.write('\n')
