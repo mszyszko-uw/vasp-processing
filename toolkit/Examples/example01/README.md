@@ -5,7 +5,7 @@ This guide covers how to set up the VASP settings, prepare files and run the cal
 
 ---
 
-## 📂 Input files
+## Input files
 
 ```
 .
@@ -14,7 +14,7 @@ This guide covers how to set up the VASP settings, prepare files and run the cal
 ├── input.py # toolkit input file containing the setting specified by the user
 ```
 
-## 📝 Usage
+## Running the example
 
 ### 1. Configure defaults
 Set paths and global defaults in **`defaults.py`**, e.g.:
