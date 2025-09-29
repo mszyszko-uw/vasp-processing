@@ -450,14 +450,11 @@ def t_dos_so(folder, part, previous=os.path.join(CALCULATION_PATH, 't_geo_so/03_
 
 # Creates a POTCAR file based on the VASP recommended, if POTCAR wasn't supplied by the user
 def create_potcar(elements, potcar_path):
-    with open(os.path.join(PSEUDOPOTENTIALS_PATH, 'recomended_pseudopotentials.txt'), 'r') as f, open(potcar_path, 'w') as POTCAR:
+    with open('recomended_pseudopotentials.txt', 'r') as f, open(potcar_path, 'w') as POTCAR:
         lines = f.readlines()
         potcar_paths = {}
         for line in lines:
             if line.split(',')[0].split('_')[0] in elements:
-                if 'd' in line.split(',')[2]:
-                    INCAR_SETTINGS['LMAXMIX'] = 4
-                    INCAR_SETTINGS['LASPH'] = ".TRUE."
                 potcar_paths[line.split(',')[0].split('_')[0]] = os.path.join(PSEUDOPOTENTIALS_PATH, line.split(',')[0], 'POTCAR')
         for element in elements:
             with open(potcar_paths[element], 'r') as file:
