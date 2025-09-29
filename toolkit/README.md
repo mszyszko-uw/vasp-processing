@@ -79,7 +79,7 @@ python toolkit.py --step t_geo --part cg_opt
 
 Steps and parts correspond to different stages of a workflow.
 
-Alternatively you can you the functions corresponding to specific steps in explicitly in python:
+Alternatively you can use the functions corresponding to specific steps explicitly in python:
 
 ```python
 path_to_calc = t_bs(folder="your/calc/dir", part="scf", previous="your/scf/folder") 
