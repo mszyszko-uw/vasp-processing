@@ -17,11 +17,11 @@ This guide covers how to set up the VASP settings, prepare files and run the cal
 ## Running example01
 
 ### 1. Configure defaults
-Set paths and global defaults in **`defaults.py`**, e.g.:
+Set paths and global defaults in **`defaults.py`**, such as the path to your folder containing all VASP POTCAR files, the settings of your cluster:
 
 ```python
 PSEUDOPOTENTIALS_PATH = "/path/to/vasp/pseudopotentials"
-CALCULATION_PATH = "your/Calculation/path"
+CALCULATION_PATH = "your/default/Calculation/path"
 CPU_PER_NODE = 192
 CPU_PER_SOCKET = 24
 ```
@@ -31,6 +31,8 @@ Specify system-specific overrides in **`input.py`**. In this example the full wo
 
 ```python
 from defaults import *
+
+CALCULATION_PATH = "example01"
 
 STEPS = {
     't_scf': 'your POSCAR & KPOINTS path',    
@@ -65,13 +67,16 @@ TO DO
 After the `t_conv_test` step is finished, check the file `t_conv_test/convergence_report.csv` file, and choose the parameters for the rest of the calculations based on the lattice constants and if the particular calculation converged (the external pressure lower than 1 kilobar for all directions and the atomic forces below 1e-3). Here the k-mesh of (8, 8, 3) and ENCUT=350 should be enough. Now that you need to specify the path to SCF calculations with this parameters for the next calculations (band structure, DOS and spin-orbit calculations), by changing the STEPS with 'converged' in the **`input.py`** to the correct path. Additionally you need to specify the `K_PATH` variable for the band structure calculations, here it is defined as Γ-M-K-Γ-A-L-H-A, you can also specify the number of points between each high symmetry point using the `POINTS_PER_SEGMENT` variable. The final **`input.py`** file should look like something like this.
 
 ```python
+from defaults import *
+
+CALCULATION_PATH = "example01"
 STEPS = {
     't_scf': 'path containing POSCAR & KPOINTS',    
     't_geo': 't_scf',
     't_conv_test': 't_geo',
-    't_bs': 'your_calculation_path/t_conv_test/k8x8x3/e350/03_t_scf',
-    't_dos': 'your_calculation_path/t_conv_test/k8x8x3/e350/03_t_scf',
-    't_scf_so': 'your_calculation_path/t_conv_test/k8x8x3/e350/03_t_scf',
+    't_bs': 'example01/t_conv_test/k8x8x3/e350/03_t_scf',
+    't_dos': 'example01/t_conv_test/k8x8x3/e350/03_t_scf',
+    't_scf_so': 'example01/t_conv_test/k8x8x3/e350/03_t_scf',
     't_geo_so': 't_scf_so',
     't_bs_so': 't_geo_so',
     't_dos_so': 't_geo_so'
@@ -103,6 +108,6 @@ Now that the file for further calculations is prepared you can run 6 remaining s
 ### 5. Run the rest of the calculations
 TO DO
 
-### 6. Analyse the results
+### 6. Analyze the results
 TO DO
 
