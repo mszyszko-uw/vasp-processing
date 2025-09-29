@@ -6,7 +6,13 @@ from defaults import *
 STEPS = {
     't_scf': '',    
     't_geo': 't_scf',
-    't_bs': 't_geo'
+    't_conv_test': 't_geo',
+    't_bs': 'converged',
+    't_dos': 'converged',
+    't_scf_so': 'converged',
+    't_geo_so': 't_scf_so',
+    't_bs_so': 't_geo_so',
+    't_dos_so': 't_geo_so'
 }
 
 INCAR_SETTINGS['SYSTEM'] = 'bulk MoTe2'
