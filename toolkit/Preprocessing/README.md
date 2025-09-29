@@ -1,4 +1,4 @@
-# VASP Workflow Toolkit
+# VASP Preprocessing Toolkit
 
 This repository provides a **Python-based toolkit** for setting up, managing, and analyzing **VASP density functional theory (DFT) calculations**.  
 The central script, `toolkit.py`, automates common VASP workflows such as SCF runs, geometry optimization, band structure, density of states, and convergence tests (with and without spin–orbit coupling).
