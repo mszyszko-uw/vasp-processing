@@ -3,9 +3,9 @@
 
 
 # ===== Set up variables ======
-PSEUDOPOTENTIALS_PATH = 'your_path'
-LOGFILE = 'toolkit.log'
-CALCULATION_PATH = 'Calculations'
+PSEUDOPOTENTIALS_PATH = 'your_path' # path to the folder containing all VASP pseudopotentials
+LOGFILE = 'toolkit.log' # path + name of your log file for toolkit
+CALCULATION_PATH = 'Calculations' # where the calculation folders will be created, if toolkit used from terminal
 CPU_PER_NODE = 192
 CPU_PER_SOCKET = 24
 
