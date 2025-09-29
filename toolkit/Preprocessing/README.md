@@ -9,7 +9,7 @@ The central script, `toolkit.py`, automates common VASP workflows such as SCF ru
 
 ```
 .
-├── toolkit.py   # Main workflow manager
+├── toolkit.py   # Main file containing all the functions
 ├── input.py     # User-specific calculation settings
 ├── defaults.py  # Default parameters (used if not overridden in input.py)
 ```
@@ -57,6 +57,8 @@ Specify system-specific overrides in **`input.py`**.
 At minimum, the `STEPS` dictionary must be defined. For each step either the previous one, or a path to the folder with necessary files needs to be provided. Additional VASP and toolkit settings can be changed by overwriting the defeault settings - check **`defaults.py`**.
 
 ```python
+CALCULATION_PATH = 'MyCalc'
+
 STEPS = {
     't_scf': 'path/to/POSCAR',    
     't_geo': 't_scf',
@@ -69,19 +71,20 @@ INCAR_SETTINGS['SIGMA'] = 0.05
 ```
 
 ### 3. Run a workflow step
-Use `toolkit.py` with `--step` and `--part`:
+The are two ways of running the toolkit, in terminal or in python. 
+To use the terminal version you need to run `toolkit.py` with `--step` and `--part` as showed below: 
 
 ```bash
 python toolkit.py --step t_scf --part dry
 python toolkit.py --step t_scf --part scf
 python toolkit.py --step t_geo --part cg_opt
 ```
+Steps and parts correspond to different stages of a workflow and are described in Section Supported Steps. This will create the files using the settings set up in the **`input.py`** file.
 
-Steps and parts correspond to different stages of a workflow and are described in Section Supported Steps.
-Alternatively you can use the functions corresponding to specific steps explicitly in python by importing the toolkit.py:
+Alternatively you can use the functions corresponding to specific steps explicitly in python by importing the `toolkit.py` as showed below:
 
 ```python
-import toolkit.py
+import toolkit
 
 path_to_calc = t_bs(folder="your/calc/dir", part="scf", previous="your/scf/folder") 
 ```
@@ -90,8 +93,6 @@ Each function takes as inputs: the folder to which create the files, the part of
 ---
 
 ## Supported Steps
-
-### Steps (non SOC & SOC variants)
 - `t_scf`: non SOC SCF calculation, includes parts: `dry` & `scf`
 - `t_scf_so`:  SOC SCF calculation, includes parts: `dry` & `scf`  
 - `t_geo`: non SOC geometry optimisation (Conjugate Gradient → quasi-Newton → SCF), includes parts: `dry`, `cg_opt`, `nw_opt`, `scf` & `report`
@@ -101,7 +102,6 @@ Each function takes as inputs: the folder to which create the files, the part of
 - `t_bs_so`: SOC band structure, includes parts: `dry`, `bs`  
 - `t_dos`: non SOC density of states (DOS), includes parts: `dry`, `dos`
 - `t_dos_so`: SOC density of states (DOS), includes parts: `dry`, `dos`   
-
 ---
 
 ## Reports
