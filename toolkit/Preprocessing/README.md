@@ -5,7 +5,7 @@ The central script, `toolkit.py`, automates common VASP workflows such as SCF ru
 
 ---
 
-## 📂 Repository Structure
+## Repository Structure
 
 ```
 .
@@ -16,7 +16,7 @@ The central script, `toolkit.py`, automates common VASP workflows such as SCF ru
 
 ---
 
-## ⚙️ Features
+## Features
 
 - **Step-based workflow control**: each stage (SCF, geometry optimization, DOS, etc.) is modular.  
 - **Supports SOC & non-SOC workflows**.  
@@ -37,24 +37,24 @@ The central script, `toolkit.py`, automates common VASP workflows such as SCF ru
 - `numpy`  
 - `matplotlib`  
 - `h5py`  
-
+All required modules can be easily installed with pip.
 ---
 
-## 📝 Usage
+## Usage
 
 ### 1. Configure defaults
 Set paths and global defaults in **`defaults.py`**, e.g.:
 
 ```python
 PSEUDOPOTENTIALS_PATH = "/path/to/vasp/pseudopotentials"
-CALCULATION_PATH = "your/Calculation/path"
+CALCULATION_PATH = "your/default/Calculation/path"
 CPU_PER_NODE = 192
 CPU_PER_SOCKET = 24
 ```
 
 ### 2. Define your calculation
 Specify system-specific overrides in **`input.py`**.  
-At minimum, the `STEPS` dictionary must be defined. For each step either the previous one, or a path to the folder with necessary files needs to be provided:
+At minimum, the `STEPS` dictionary must be defined. For each step either the previous one, or a path to the folder with necessary files needs to be provided. Additional VASP and toolkit settings can be changed by overwriting the defeault settings - check **`defaults.py`**.
 
 ```python
 STEPS = {
@@ -77,19 +77,19 @@ python toolkit.py --step t_scf --part scf
 python toolkit.py --step t_geo --part cg_opt
 ```
 
-Steps and parts correspond to different stages of a workflow.
-
-Alternatively you can use the functions corresponding to specific steps explicitly in python:
+Steps and parts correspond to different stages of a workflow and are described in Section Supported Steps.
+Alternatively you can use the functions corresponding to specific steps explicitly in python by importing the toolkit.py:
 
 ```python
+import toolkit.py
+
 path_to_calc = t_bs(folder="your/calc/dir", part="scf", previous="your/scf/folder") 
 ```
-This way of using the toolkit can be beneficial for preprocessing files for multiple similar calculations at the same time.
-However, this implementation still needs the settings to be defined as previously described.
+Each function takes as inputs: the folder to which create the files, the part of the step and the path from which to take necessary files. This way of using the toolkit can be beneficial for preprocessing files for multiple similar calculations at the same time, by creating your own python workflows. However, this implementation still needs the settings to be defined as previously described with global variables.
 
 ---
 
-## 📖 Supported Steps
+## Supported Steps
 
 ### Steps (non SOC & SOC variants)
 - `t_scf`: non SOC SCF calculation, includes parts: `dry` & `scf`
@@ -104,7 +104,7 @@ However, this implementation still needs the settings to be defined as previousl
 
 ---
 
-## 📊 Reports
+## Reports
 
 - **PDF reports** include stress, forces, and SCF convergence plots.  
 - **Convergence reports** (CSV) summarize lattice constants, forces, energy, and convergence flags for different ENCUT and k-mesh values.  
@@ -114,8 +114,8 @@ However, this implementation still needs the settings to be defined as previousl
 ## ⚠️ Notes
 
 - Ensure **POSCAR** is always present.  
-- If **POTCAR** is missing, the toolkit will attempt to generate it from recommended pseudopotentials.  
+- If **POTCAR** is missing, the toolkit will attempt to generate it from recommended pseudopotentials, but the path to the folder containing all VASP PBE pseudopotentials is required.  
 - **CHGCAR** is required only for NSCF runs (band structure/DOS).  
 - Missing files are handled with fallbacks where possible.
-- For band structure calculations a **KPOINTS** file containing a path should be present in the previous directory or K_PATH variable in **input.py** need to be specified
+- For band structure calculations a **KPOINTS** file containing a path should be present in the previous directory or K_PATH variable in **input.py** need to be specified.
   
