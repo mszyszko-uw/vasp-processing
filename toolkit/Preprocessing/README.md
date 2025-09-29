@@ -36,8 +36,9 @@ The central script, `toolkit.py`, automates common VASP workflows such as SCF ru
 - Python ≥ 3.9  
 - `numpy`  
 - `matplotlib`  
-- `h5py`  
-All required modules can be easily installed with pip.
+- `h5py`
+  
+  All required modules can be easily installed with pip.
 ---
 
 ## Usage
