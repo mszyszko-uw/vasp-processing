@@ -23,6 +23,9 @@ Install requirements:
 * pip ≥ 19.0
 * simple_slurm==0.3.6
 * PyYAML==6.0.2
+* numpy
+* matplotlib
+* h5py
 
 ```bash
 pip install -r requirements.txt
