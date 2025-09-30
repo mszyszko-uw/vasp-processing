@@ -106,11 +106,13 @@ class slurm_job:
         except:
             pass
         self.slurm = Slurm(**self.options)
+        self.slurm.set_shell("/bin/bash -l")
         self.add_cmds()
 
     def add_option(self, key, value):
         self.options[key] = value
         self.slurm = Slurm(**self.options)
+        self.slurm.set_shell("/bin/bash -l")
         self.add_cmds()
 
     def set_path(self, path:str):
@@ -128,6 +130,7 @@ class slurm_job:
         self.options["error"] = "output_%A_%a.err"
         self.env_array = [results, "cd ${jobs[$SLURM_ARRAY_TASK_ID]}"]
         self.slurm = Slurm(**self.options)
+        self.slurm.set_shell("/bin/bash -l")
         self.add_cmds()
 
     def submit_with_hold(self):
@@ -150,4 +153,4 @@ class slurm_job:
                     return int((start_time - now).total_seconds())/3600
             else: return 0
             time.sleep(1)
-        raise TimeoutError("Nie udało się odczytać przewidywanego czasu uruchomienia.")
+        raise TimeoutError("Failed to read estimated launch time.")

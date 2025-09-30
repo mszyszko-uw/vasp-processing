@@ -33,10 +33,9 @@ def main():
         if params.steps:
             for step in steps:
                 steps_jobs[step].add_array_from_path()
-#                steps_jobs[step].submit()
+
         else:
             job.add_array_from_path()
-#            job.submit()
 
     if params.dependency:
         if params.steps:
@@ -46,9 +45,9 @@ def main():
             job.dependency = params.dependency
 
     action = params.action[0]
-    if action == "freenodes":
+    if action == "list_free_nodes":
         get_available_resources(printing=True)
-    if action == "wating":
+    if action == "wating_estimation":
         SLURM_make_times_report()
     if action == "print":
         if params.steps:
@@ -78,12 +77,12 @@ def main():
                     job_id = steps_jobs[step].submit()
         else:
             job.submit()
-    if action == 'checkqueue':
+    if action == 'check_queue':
         subprocess.run(["squeue", "--me",])
     if params.id:
-        if action == 'canceljob':
+        if action == 'cancel_job':
             subprocess.run(["scancel", params.id])
-        if action == 'jobinfo':
+        if action == 'job_info':
             subprocess.run(["scontrol", "show", "job", params.id])
 #    job.predict_time()
 
