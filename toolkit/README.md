@@ -28,7 +28,7 @@ Install requirements:
 pip install -r requirements.txt
 ```
 
-> 💡 It is strongly recommended to use a separate Python environment (either `venv` or `conda`).
+> It is strongly recommended to use a separate Python environment (either `venv` or `conda`).
 
 ---
 
