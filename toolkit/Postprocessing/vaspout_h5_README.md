@@ -11,6 +11,7 @@
 * [Files in this package](#files-in-this-package)
 * [Command-line usage (examples)](#command-line-usage-examples)
 * [Python API (examples)](#python-api-examples)
+* [Detailed options for `plot_BS` / `BandStructurePlot`](#detailed-options-for-plot_bs--bandstructureplot)
 * [`description` / `kpaths` / `bands` syntax (full spec)](#description--kpaths--bands-syntax-full-spec)
 
   * [Projection `description` string grammar](#projection-description-string-grammar)
@@ -25,8 +26,6 @@
   * [Optional: process only directories containing `vaspout.h5` (one-liner)](#optional-process-only-directories-containing-vaspouth5-one-liner)
 * [MAGMOM extraction](#magmom-extraction)
 * [Troubleshooting & tips](#troubleshooting--tips)
-* [Example output images (placeholders)](#example-output-images-placeholders)
-* [License](#license)
 
 ---
 
@@ -68,17 +67,17 @@
 Basic pattern:
 
 ```bash
-python3 vaspout_h5.py <calc_type> "<description>" [--kpaths "<kpaths>"] [--bands "<bands>"] [other options]
+python vaspout_h5.py <calc_type> "<description>" [--kpaths "<kpaths>"] [--bands "<bands>"] [other options]
 ```
 
 Examples:
 
 ```bash
 # Band structure (projected)
-python3 vaspout_h5.py band "1,2 Mo dxy" --kpaths "1 2 3 -4" --bands "5-15" --E0 fermi
+python vaspout_h5.py band "1,2 Mo dxy" --kpaths "1 2 3 -4" --bands "5-15" --E0 fermi
 
 # DOS (total)
-python3 vaspout_h5.py dos "total" --E0 0 --save --gnuplot
+python vaspout_h5.py dos "total" --E0 0 --gnuplot
 ```
 
 Helpful CLI options:
@@ -230,6 +229,7 @@ BandStructurePlot(ic: InformationCollector,
 
 ---
 
+
 ## `description` / `kpaths` / `bands` syntax (full spec)
 
 ### Projection `description` string grammar
@@ -313,7 +313,7 @@ Common (conventional) labels:
 * `max_jobs` — maximum number of concurrent jobs (integer).
 * `parent_folder` — directory under which the script searches.
 * `calc_folder` — directory **name** to match (e.g., `calc`).
-* `[args...]` — arguments passed to `vaspout_h5.py` (e.g., `band "1,2 Mo dxy" --E0 fermi --save`).
+* `[args...]` — arguments passed to `vaspout_h5.py` (e.g., `band "1,2 Mo dxy" --E0 fermi`).
 
 ### Full `mass_process.sh` (verbatim)
 
@@ -350,7 +350,7 @@ find "$parent_folder" -type d -name "$calc_folder" | while read -r dir; do
     (
         echo ">>> Entering $dir"
         cd "$dir" || exit 1
-        "python3" "$SCRIPT" "${script_args[@]}"
+        "python" "$SCRIPT" "${script_args[@]}"
     ) &
 done
 
@@ -364,7 +364,7 @@ Source: `mass_process.sh`.&#x20;
 
 * The script uses `find "$parent_folder" -type d -name "$calc_folder"`, so it **matches directory names**, not directories that contain `vaspout.h5`. If a matched directory lacks `vaspout.h5`, `vaspout_h5.py` will likely error — the wrapper does not check for the file.
 * `mass_process.sh` expects `vaspout_h5.py` to be located next to `mass_process.sh` (it computes `START_DIR` from the script location).
-* The wrapper uses `python3` explicitly; change it if you need another interpreter or virtualenv.
+* The wrapper uses `python` explicitly; change it if you need another interpreter or virtualenv.
 * To process only directories containing `vaspout.h5`, replace the `find` line with a command that finds `vaspout.h5` and returns its parent directories (example below).
 
 ---
@@ -396,7 +396,7 @@ done
 * **Missing modules (`Plotting`, `InformationCollector`)**: ensure these files are in the repo or on `PYTHONPATH`.
 * **vaspout.h5 not found**: run `vaspout_h5.py` in the directory containing `vaspout.h5` or pass the correct path when instantiating `vaspout_h5(...)`.
 * **Parallel jobs hang**: set a lower `max_jobs`.
-* **Interpreter mismatch**: edit `mass_process.sh` (it uses `python3`).
+* **Interpreter mismatch**: edit `mass_process.sh` (it uses `python`).
 * **Different output format**: call plotting functions from Python and use `plt.savefig("name.pdf")`.
 
 ---

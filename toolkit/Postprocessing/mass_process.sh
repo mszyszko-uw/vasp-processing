@@ -30,7 +30,7 @@ find "$parent_folder" -type d -name "$calc_folder" | while read -r dir; do
     (
         echo ">>> Entering $dir"
         cd "$dir" || exit 1
-        "python3" "$SCRIPT" "${script_args[@]}"
+        "python" "$SCRIPT" "${script_args[@]}"
     ) &
 done
 
