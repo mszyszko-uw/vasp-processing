@@ -109,5 +109,5 @@ Now that the file for further calculations is prepared you can run 6 remaining s
 TO DO
 
 ### 6. Analyze the results
-TO DO
+Refer to **Postprocessing.ipynb**
 
