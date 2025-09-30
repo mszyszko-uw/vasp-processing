@@ -26,7 +26,7 @@ for p in "${my_paths[@]}"; do
 done
 
 cd "$START_DIR"
-mapfile -t my_paths < <(python3 $START_DIR/Preprocessing/toolkit.py --step t_conv_test--part cg_opt)
+mapfile -t my_paths < <(python3 $START_DIR/Preprocessing/toolkit.py --step t_conv_test --part cg_opt)
 for p in "${my_paths[@]}"; do
   cd "$p"
   echo "$p"
