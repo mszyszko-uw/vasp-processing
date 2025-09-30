@@ -53,17 +53,18 @@ It combines two major components:
    pip install -r requirements.txt
    ```
 
-   `DFT-toolkit.pdf` recommends: Python ≥ 3.6 (or ≥ 3.9 in some toolkit readme), `simple_slurm`, `PyYAML`, `h5py`, `numpy`, `matplotlib`.
+   Requirements: Python ≥ 3.9, `simple_slurm`, `PyYAML`, `h5py`, `numpy`, `matplotlib`.
 
 3. **Cluster modules**: your SLURM script should load the appropriate compiler/MPI/VASP modules (example later).
 
-4. **Pseudopotentials**: make sure the PBE POTCAR directory is available on the cluster and update `defaults.py` / machine config to point to it.
+4. **Pseudopotentials**: make sure the PBE POTCAR directory is available on the cluster and update `defaults.py` to point to it.
 
 ---
 
 ## Repository contents & important files
 
-* `toolkit.py` / `dft_toolkit.py` — pipeline manager for building and submitting SLURM scripts (see `DFT-toolkit.pdf`).
+* `toolkit.py` — preprocessing module (preparing VASP input files fo calculations).
+* `dft_toolkit.py` — pipeline manager for building and submitting SLURM scripts (see `DFT-toolkit.pdf`).
 * `defaults.py` — global defaults (POTCAR path, CPU per node/socket, common INCAR defaults).
 * `input.py` — user-specific overrides; define `STEPS` and per-step settings here.
 * `vaspout_h5.py` — postprocessing module (band/DOS plotting, MAGMOM extraction).
@@ -134,11 +135,14 @@ These are *recommended* resources and IO behaviors. Adjust for your cluster.
   * cores: `10–100`
   * mem/core: `< 2 GB`
   * time: `1 min – 100 h` (optimizations are expensive)
+  * exec: `std` (or `ncl` for SOC)
   * outputs: `CONTCAR`, `OUTCAR`, `vaspout.h5`, `vaspwave.h5`
 
 * **t_bs / t_bs_so**, **t_dos / t_dos_so**
 
-  * cores: `10–100`, mem/core `< 2 GB`, time `1 min – 10 h`
+  * cores: `10–100`
+  * mem/core `< 2 GB`
+  * time `1 min – 10 h`
   * inputs require `CHGCAR` from previous SCF
   * outputs: `EIGENVAL`, `vaspout.h5`, `PROCAR` (optional), `DOSCAR` for DOS
 
@@ -155,7 +159,7 @@ These are *recommended* resources and IO behaviors. Adjust for your cluster.
 **Depending on task (parsed and then removed):**
 
 * `WAVECAR`, `CHG*`, `WAVEDER*`, `PROCAR`, `vasprun.xml`, `BSEFATBAND`, `CONTCAR`
-  (these are removed when they are not needed to keep repository size reasonable; follow `defaults.py` / `input.py` settings to control)
+  (these are removed when they are not needed to keep repository size reasonable)
 
 > Note: keep `vaspout.h5` unless you have explicit reasons to prune; the toolkit & postprocessing work from `vaspout.h5`.
 
@@ -373,19 +377,13 @@ Reports may be a combination of:
 * CSV convergence tables (for array tests),
 * plain-text job logs.
 
-**File retention policy (repeat):**
-
-* **KEEP**: `INCAR`, `POSCAR`, `POTCAR`, `KPOINTS`, `EIGENVAL`, `log`, `OSZICAR`, `OUTCAR`, `*.h5`, `IBZKPT`, `err`, `job.sh`
-* **REMOVE**: `REPORT`, `XDATACAR`, `PCDAT`
-* **CONDITIONAL (parsed then removed)**: `WAVECAR`, `CHG*`, `WAVEDER*`, `PROCAR`, `vasprun.xml`, `BSEFATBAND`, `CONTCAR` (depending on retention policy per-step — configurable in `defaults.py`)
-
 ---
 
 ## Troubleshooting & tips
 
 * Ensure `Plotting.py` and `InformationCollector.py` are present and importable by `vaspout_h5.py`.
 * For BS/DOS postprocessing always try to use `vaspout.h5`. If `vaspwave.h5` exists, note: *full vaspwave support is not yet implemented*.
-* For array jobs on clusters, use `a_*` tasks and the toolkit `--array` feature; monitor SLURM queue with `squeue -u $USER` or toolkit `checkqueue`.
+* For array jobs on clusters, use `a_*` tasks and the DFT-toolkit `--array` feature; monitor SLURM queue with `squeue -u $USER` or DFT-toolkit `checkqueue`.
 * If band numbering looks odd, adjust `min_diff` in `plot_BS(...)`.
 * If plotting fails due to missing keys in `vaspout.h5`, run `t_dry` locally to verify inputs before submitting heavy jobs.
 * Make sure your `config_scp.yaml` points to correct VASP module and Python environment.
