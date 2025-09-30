@@ -1,5 +1,5 @@
 from defaults import *
-# File containing the settings for varius steps of the calculations
+# File containing the settings for various steps of the calculations
 # if the variable is not set, the default setting will be used, but this can lead to bad results
 
 # STEPS parameter is the only on the always has to be specified in this file, the rest is optional
