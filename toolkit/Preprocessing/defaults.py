@@ -1,5 +1,5 @@
 # File containing default settings
-#if the this setting are not specifiec in the input.py file, this settings will be used
+#if the this setting are not specified in the input.py file, this settings will be used
 
 
 # ===== Set up variables ======
