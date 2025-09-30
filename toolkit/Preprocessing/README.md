@@ -12,6 +12,7 @@ The central script, `toolkit.py`, automates common VASP workflows such as SCF ru
 ├── toolkit.py   # Main file containing all the functions
 ├── input.py     # User-specific calculation settings
 ├── defaults.py  # Default parameters (used if not overridden in input.py)
+├── recommended_pseudopotentials.txt # File used for handling missing POTCAR files
 ```
 
 ---
