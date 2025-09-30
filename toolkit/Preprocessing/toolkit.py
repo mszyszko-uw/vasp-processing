@@ -25,7 +25,7 @@ def create_step(step, part, copy_path):
     elif step == 't_geo':
         print(t_geo(os.path.join(CALCULATION_PATH, 't_geo'), part, previous=copy_path))
     elif step == 't_conv_test':
-        paths = t_conv_test(os.path.join(CALCULATION_PATH, 't_conv_test'), part, kmesh_list=CONV_KMESH, encut_list=CONV_ENCUT, previous=copy_path)
+        paths = t_conv_test(os.path.join(CALCULATION_PATH, 't_conv_test'), part, previous=copy_path)
         for p in paths:
             print(p)
     elif step == 't_bs':
