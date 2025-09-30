@@ -3,8 +3,9 @@
 **Purpose:** this repository bundles tools for preparing, submitting and postprocessing VASP calculations on HPC (SLURM) clusters and on small local machines.
 It combines two major components:
 
-* **DFT-toolkit** — pipeline manager for creating SLURM jobs, arrays, and multi-step workflows (based on `DFT-toolkit` / `toolkit.py` described in `DFT-toolkit.pdf`).
+* **DFT-toolkit** — pipeline manager for creating SLURM jobs, arrays, and multi-step workflows.
 * **vaspout_h5.py** — focused postprocessing utilities that read `vaspout.h5`, extract MAGMOM, band structure (BS), density-of-states (DOS) and produce publication-ready plots (PNG) and optional gnuplot `.txt` files.
+* **toolkit.py** — preprocessing module for creating VASP input files, handling missing files and some reports of the calculations (geometry optimisation and convergence tests).
 
 ---
 
@@ -13,13 +14,12 @@ It combines two major components:
 * [Assumptions (global)](#assumptions-global)
 * [Installation & environment](#installation--environment)
 * [Repository contents & important files](#repository-contents--important-files)
-* [Task naming convention & supported tasks](#task-naming-convention--supported-tasks)
 * [Per-task resource guidelines & IO rules](#per-task-resource-guidelines--io-rules)
 * [Using DFT-toolkit (pipeline manager) — quickstart](#using-dft-toolkit-pipeline-manager---quickstart)
 * [SLURM job templates & examples (single job, array job)](#slurm-job-templates--examples-single-job-array-job)
 * [vaspout_h5.py — postprocessing & plotting (usage and options)](#vaspout_h5py---postprocessing--plotting-usage-and-options)
 * [Batch processing helper: `mass_process.sh` (verbatim)](#batch-processing-helper-mass_processsh-verbatim)
-* [Outputs & reports (what we keep / remove)](#outputs--reports-what-we-keep--remove)
+* [Outputs & reports](#outputs--reports)
 * [Troubleshooting & tips](#troubleshooting--tips)
 
 ---
@@ -32,9 +32,8 @@ It combines two major components:
 * Support for `vaspwave.h5` (replacement for WAVECAR/CHGCAR) is planned but **not yet available** — treat WAVECAR/CHGCAR as necessary fallbacks until `vaspwave.h5` becomes supported.
 * Use **SLURM array jobs** for ensembles of independent calculations.
 * The user provides starting **POSCAR** files.
-* Use recommended **PBE POTCARs** kept in a known directory on the cluster (configured in `defaults.py` / machine config).
+* Use recommended **PBE POTCARs** kept in a known directory on the cluster (configured in `defaults.py`).
 * After each task finishes (successfully or crashed) a short **report** is produced (PDF/CSV/LOG depending on step).
-* File retention policy (see below) is strictly followed.
 
 ---
 
@@ -58,6 +57,8 @@ It combines two major components:
 3. **Cluster modules**: your SLURM script should load the appropriate compiler/MPI/VASP modules (example later).
 
 4. **Pseudopotentials**: make sure the PBE POTCAR directory is available on the cluster and update `defaults.py` to point to it.
+   
+5. **Configure defaults.py**: go to `defaults.py` and configure your cluster settings, paths for log file, pseudopotentials, as well as your default VASP settings for various calculations. 
 
 ---
 
@@ -71,37 +72,6 @@ It combines two major components:
 * `mass_process.sh` — parallel wrapper to run `vaspout_h5.py` in many directories.
 * `README.md` and `DFT-toolkit.pdf` — project documentation (this README builds on both).
 * `Plotting.py`, `InformationCollector.py` — private modules used by `vaspout_h5.py` (must be available on `PYTHONPATH`).
-
----
-
-## Task naming convention & supported tasks
-
-**Task name format:**
-
-```
-(00,01,..)<prefix>_<acronym>(_<suffix>)
-```
-
-* `prefix`:
-
-  * `t` — single task
-  * `s` — sequence of tasks (dependent)
-  * `a` — array of independent single tasks or sequences (for SLURM array jobs)
-  * `w` — workflow
-
-* `acronym` (examples supported by toolkit):
-
-  * `dry` — dry run (checks inputs, bands, kpoints)
-  * `scf` — static SCF run
-  * `geo` — geometry optimization
-  * `bs` — band structure (line-mode)
-  * `dos` — density of states (k-grid)
-  * `eps`, `epsfcn`, `meff`, `selrul`, `gband`, `gexc` — advanced properties (dielectric, effective masses, selection rules, g-factors, excitons)
-
-* `suffix` (optional):
-
-  * `so` — with spin–orbit coupling
-  * `hse06`, `dsh` — hybrid functional variants
 
 ---
 
@@ -195,7 +165,7 @@ DFT-toolkit supports creating SLURM scripts from configurable machine and steps 
      cmd: |
        ulimit -s unlimited
        START_DIR="$(pwd)"
-       output=$(python3 toolkit.py --step scf --part dry)
+       output=$(python3 $START_DIR/Preprocessing/toolkit.py --step scf --part dry)
        cd "$output"
        mpiexec vasp_std > log
    ```
@@ -207,7 +177,7 @@ DFT-toolkit supports creating SLURM scripts from configurable machine and steps 
    * Check queue: `python dft_toolkit.py checkqueue`
    * Run arrays: `python dft_toolkit.py --array --steps a_test submit`
 
-4. **Local usage** (no SLURM): call the functions from `toolkit.py` or run the CLI to produce input files and run VASP locally (manually or via `mpiexec`).
+4. **Local usage** (no SLURM): call the functions from `toolkit.py` or run the CLI to produce input files and run VASP locally (manually or via `mpiexec`), described in `toolkit/Preprocessing/README.md`.
 
 ---
 
@@ -233,7 +203,7 @@ ulimit -s unlimited
 START_DIR="$(pwd)"
 
 # Preprocessing (create inputs)
-output=$(python3 toolkit.py --step t_scf --part dry --path "$START_DIR")
+output=$(python3 $START_DIR/Preprocessing/toolkit.pytoolkit.py --step t_scf --part dry --path "$START_DIR")
 cd "$output"
 
 # Run VASP
@@ -362,9 +332,9 @@ done
 
 ---
 
-## Outputs & reports (what we keep / remove)
+## Outputs & reports
 
-**Reports:** after each job finishes (success or crash), the toolkit produces a short report summarizing:
+**Reports:** after most job finishes (success or crash), the toolkit produces a short report summarizing:
 
 * convergence (SCF iterations, forces),
 * final energies (TOTEN, bandgap if relevant),
