@@ -15,25 +15,25 @@ module load  intel-compilers/2023.2.1  impi/2021.10.0   VASP/6.5.1-Dsingle_prec_
 module load Python/3.11.5 matplotlib/3.8.2 h5py/3.11.0
 
 START_DIR="$(pwd)"
-output=$(python3 toolkit.py --step t_geo_so --part dry)
+output=$(python3 $START_DIR/Preprocessing/toolkit.py --step t_geo_so --part dry)
 cd "$output"
 mpiexec vasp_ncl > log
 
 cd "$START_DIR"
-output=$(python3 toolkit.py --step t_geo_so --part cg_opt)
+output=$(python3 $START_DIR/Preprocessing/toolkit.py --step t_geo_so --part cg_opt)
 cd "$output"
 mpiexec vasp_ncl > log
 
 cd "$START_DIR"
-output=$(python3 toolkit.py --step t_geo_so --part nw_opt)
+output=$(python3 $START_DIR/Preprocessing/toolkit.py --step t_geo_so --part nw_opt)
 cd "$output"
 mpiexec vasp_ncl > log
 
 cd "$START_DIR"
-output=$(python3 toolkit.py --step t_geo_so --part scf)
+output=$(python3 $START_DIR/Preprocessing/toolkit.py --step t_geo_so --part scf)
 cd "$output"
 mpiexec vasp_ncl > log
 
 cd "$START_DIR"
-python3 toolkit.py --step t_geo_so --part report
+python3 $START_DIR/Preprocessing/toolkit.py --step t_geo_so --part report
 
