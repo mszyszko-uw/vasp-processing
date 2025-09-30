@@ -89,7 +89,9 @@ Helpful CLI options:
 * `--E0` — energy reference (float) or `"fermi"`.
 * `--gnuplot` — export plot data to `.txt`.
 * `--bandnums` — display band indices on BS plots.
-* `--color`, `--mult`, `--alpha` — visual controls.
+* `--color` — color of the plot e.g. `'red'`.
+* `--mult` — multiplier applied to marker sizes for projected points.
+* `--alpha` — alpha (opacity) for the scatter markers showing projections. Range `[0,1]`.
 * `--folder` — override output folder (default: folder containing `vaspout.h5`).
 
 ---
