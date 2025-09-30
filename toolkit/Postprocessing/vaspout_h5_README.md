@@ -119,6 +119,117 @@ plot_BS_DOS(BS, DOS, description="1,2 Mo dxy")
 
 ---
 
+## Detailed options for `plot_BS` / `BandStructurePlot`
+
+The `plot_BS` wrapper calls `BandStructurePlot(ic, **kwargs)`. Below is a complete, function-level description of the keyword arguments supported by `plot_BS` and how they affect plotting. (This mirrors the implementation in `BandStructurePlot`.)
+
+### Signature (relevant kwargs)
+
+```py
+BandStructurePlot(ic: InformationCollector,
+                  min_diff=None,
+                  ax=None,
+                  E0=None,
+                  gnuplot=False,
+                  folder='',
+                  save=False,
+                  bandnums=False,
+                  color=None,
+                  mult=1,
+                  alpha=0.1,
+                  linestyle='-',
+                  **kwargs)
+```
+
+### Parameter details
+
+* `ic` (InformationCollector)
+  The populated information container created by `vaspout_h5.read_BS()` (contains Emat, Pmat, K-points, Efermi, Evalmax, Egap, ions, num_ions, etc.).
+
+* `min_diff` (None | float) — *default: None*
+  Threshold used when grouping consecutive bands for labeling (`bandnums=True`). If `None`, it defaults to `(Emax - Emin) / 100`, where `Emax`/`Emin` are the max/min values of the band energies being plotted. Bands closer than `min_diff` are considered part of the same group for number-range annotation.
+
+* `ax` (matplotlib.axes or None) — *default: None*
+  Axis to draw onto. If `None`, uses `plt.gca()`.
+
+* `E0` (float | 'fermi' | None) — *default: None*
+  Energy reference subtracted from the band energies before plotting:
+
+  * `None`: subtract **Evalmax** (valence-band maximum) — so 0 is VB maximum.
+  * `'fermi'`: subtract **ic.Efer** (Fermi level).
+  * numeric: subtract that numeric value.
+    This is the same logic used by `vaspout_h5.plot_BS` before calling the plotting routine.
+
+* `gnuplot` (bool) — *default: False*
+  If `True`, the function calls `BandToGnuplot(...)` to write out gnuplot-friendly data files. The gnuplot output routine receives (Pmat, Emat, Kpts, Dvec, projection, bands, description, kpaths, folder). Files are written to `folder` (or `ic.folder` if `folder==''`).
+
+* `folder` (str) — *default: ''*
+  Directory to which outputs (gnuplot data and saved images) are written. If `''`, the folder from `ic.folder` (set from the `vaspout.h5` path) is used.
+
+* `save` (bool) — *default: False*
+  If `True`, the function saves the figure immediately with a base filename derived from the `description`: `folder + description.replace(' ', '_')`. (Note: Matplotlib determines final extension/format; defaults are PNG/Matplotlib config.)
+
+* `bandnums` (bool) — *default: False*
+  If `True`, the routine annotates band numbers (or ranges) at the right edge of the plot. Grouping is controlled by `min_diff`. The algorithm compares final k-point energies (`Emat[-1, :]`) to detect separations between bands.
+
+* `color` (int | float | str | None) — *default: None*
+  Color specifier passed to Matplotlib plotting calls.
+
+* `mult` (float) — *default: 1*
+  Multiplier applied to marker sizes for projected points (dot area is `abs(Pmat) * 100 * mult`).
+
+* `alpha` (float) — *default: 0.1*
+  Alpha (opacity) for the scatter markers showing projections. Range `[0,1]`.
+
+* `linestyle` (str or dash tuple) — *default: '-'*
+  Line style used when plotting "clean" band plots (see `description` semantics below). Accepts any Matplotlib linestyle specifier (e.g., `'-'`, `'--'`, `(0, (1,1))`, etc).
+
+### Plotting behavior & notes
+
+* **Energy shifting** — energies (`Emat`) are shifted by subtracting:
+
+  * `Evalmax` if `E0 is None`
+  * `ic.Efer` if `E0 == 'fermi'`
+  * the numeric `E0` otherwise
+
+* **Projection handling** — `ProjectionPainter(ions, num_ions, description)` is used to build the projection specification. The code attempts to index `Emat[..., projection['direction']]` to choose the directional component; if that fails, it falls back to `Emat[...,0]`.
+
+* **Band selection** — before plotting, energies and projectors are sliced using the band-selection produced by `BandWriter(ic.bands)` (this is applied as `Emat = Emat[:, bands]` and `Pmat = Pmat[:, bands]`).
+
+* **'clean' description special-case**
+  If the `description` string contains `'clean'`:
+
+  * The routine plots plain band lines using `linestyle` and `color`.
+    If the `description` does not contain `'clean'`:
+  * The routine plots the band lines in black (`':'`) and overlays a scatter of projected weights:
+
+    ```py
+    ax.scatter(..., s = abs(Pmat)*100*mult, alpha=alpha, label=description, c=color)
+    ```
+
+  This lets you choose between a plain band plot (`"clean"`) or a projected dot plot.
+
+* **K-line vertical ticks & energy references**
+
+  * Vertical lines (`vlines`) are drawn at k-path tick positions (`Ktik`) using a dotted line.
+  * A horizontal line is drawn at energy 0. If `E0 is None` (i.e., energies were shifted by Evalmax), an extra horizontal line at the calculated `Egap` is drawn and labeled.
+
+* **Gnuplot export**
+  If `gnuplot=True`, `BandToGnuplot(...)` is invoked with the processed matrices and projection—this writes plot data files to `folder`.
+
+* **Saving**
+  If `save=True`, the saved filename base is `folder + description.replace(' ', '_')`. If you need a specific filename or format (PDF, SVG), call `plot_BS`/`BandStructurePlot` from Python and use `plt.savefig("myfile.pdf")` explicitly.
+
+* **Axis and limits**
+  The function sets x-ticks from k-path ticks and labels, x-limits across the k-path, and y-limits to the min/max of the plotted energies.
+
+### Error / edge cases
+
+* If the projection indexing tries to access a non-existent direction, an `IndexError` is caught and the code falls back to the first component (`Emat[...,0]`).
+* `mass_process.sh` and other wrappers may call `plot_BS` with CLI-parsed args; ensure `description` and `bands` are passed in the expected formats so band slicing and projections behave consistently.
+
+---
+
 ## `description` / `kpaths` / `bands` syntax (full spec)
 
 ### Projection `description` string grammar
