@@ -50,7 +50,6 @@ def create_step(step, part, copy_path):
 
 # ===== Standard SCF step (non-SOC) =====
 # Handles dry run and SCF run
-
 def t_scf(folder, part, previous=''):
     if part == 'dry':
         # Dry run: create folder, copy base files, adjust INCAR with dry settings
@@ -76,16 +75,17 @@ def t_scf(folder, part, previous=''):
             copy_files(previous, scf_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'INCAR'])
             modify_incar(os.path.join(scf_run, 'INCAR'), add= INCAR_SETTINGS )
             return os.path.abspath(scf_run)
+    
+    else:
+        raise RuntimeError(f"Step t_scf doesn't have part: {part}")
 
 
 # ===== Geometry optimization step (non-SOC) =====
 # Handles dry run, Conjugate-Gradient opt, Newton opt, SCF, report
-
 def t_geo(folder, part, previous=os.path.join(CALCULATION_PATH, 't_scf/01_t_scf')):
     CG_OPT_SETTINGS["ISIF"] = ISIF
     NW_OPT_SETTINGS['ISIF'] = ISIF
     
-
     if part == 'dry':
         # Dry run: copy input, add opt + dry settings
         dry_run = create_folder(folder, '00_t_dry')
@@ -134,10 +134,12 @@ def t_geo(folder, part, previous=os.path.join(CALCULATION_PATH, 't_scf/01_t_scf'
         scf_run = os.path.join(folder, '03_t_scf')
         create_report(os.path.join(scf_run, 'vaspout.h5'), os.path.join(scf_run, 'report.pdf'))
 
+    else:
+        raise RuntimeError(f"Step t_geo doesn't have part: {part}")
+
 
 # ===== Convergence test step =====
 # Runs over k-meshes and ENCUT values, performs dry, Conjugate-Gradient, Newton, SCF, report
-
 def t_conv_test(folder, part, previous=os.path.join(CALCULATION_PATH, 't_geo/03_t_scf')):
     CG_OPT_SETTINGS["ISIF"] = ISIF
     NW_OPT_SETTINGS['ISIF'] = ISIF
@@ -162,7 +164,7 @@ def t_conv_test(folder, part, previous=os.path.join(CALCULATION_PATH, 't_geo/03_
                 f.write(f'{kmesh[0]} {kmesh[1]} {kmesh[2]}\n')
         return calc_paths
 
-    if part == 'cg_opt':
+    elif part == 'cg_opt':
         # For each encut, perform geometry optimization using CG
         for kmesh in CONV_KMESH:
             k_folder = os.path.join(folder, f'k{kmesh[0]}x{kmesh[1]}x{kmesh[2]}')
@@ -179,7 +181,7 @@ def t_conv_test(folder, part, previous=os.path.join(CALCULATION_PATH, 't_geo/03_
                 modify_incar(os.path.join(geo1, 'INCAR'), remove=DRY_SETTINGS, add=INCAR_SETTINGS)
         return calc_paths
 
-    if part == 'nw_opt':
+    elif part == 'nw_opt':
         # For each encut, perform geometry optimization using Newton
         for kmesh in CONV_KMESH:
             k_folder = os.path.join(folder, f'k{kmesh[0]}x{kmesh[1]}x{kmesh[2]}')
@@ -191,7 +193,7 @@ def t_conv_test(folder, part, previous=os.path.join(CALCULATION_PATH, 't_geo/03_
                 modify_incar(os.path.join(geo2, 'INCAR'), add=NW_OPT_SETTINGS, remove=CG_OPT_SETTINGS)
         return calc_paths
 
-    if part == 'scf':
+    elif part == 'scf':
         # Final SCF run for each encut
         for kmesh in CONV_KMESH:
             k_folder = os.path.join(folder, f'k{kmesh[0]}x{kmesh[1]}x{kmesh[2]}')
@@ -203,7 +205,7 @@ def t_conv_test(folder, part, previous=os.path.join(CALCULATION_PATH, 't_geo/03_
                 modify_incar(os.path.join(scf, 'INCAR'), remove=NW_OPT_SETTINGS)
         return calc_paths
     
-    if part == 'report':
+    elif part == 'report':
         # Generate convergence report over all kmesh/encut combinations
         for kmesh in CONV_KMESH:
             k_folder = os.path.join(folder, f'k{kmesh[0]}x{kmesh[1]}x{kmesh[2]}')
@@ -212,15 +214,17 @@ def t_conv_test(folder, part, previous=os.path.join(CALCULATION_PATH, 't_geo/03_
         convergence_report(folder, CONV_KMESH, CONV_ENCUT)
         return calc_paths
 
+    else:
+        raise RuntimeError(f"Step t_conv_test doesn't have part: {part}")
+
 
 # ===== Band structure step (non-SOC) =====
 # Dry run and band structure calculation
-
 def t_bs(folder, part, previous=os.path.join(CALCULATION_PATH, f't_geo/03_t_scf')):
     if part == 'dry':
         # Dry run: set k-path, adjust INCAR
         dry_run = create_folder(folder, '00_t_dry')
-        copy_files(previous, dry_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'CHGCAR', 'INCAR'])
+        copy_files(previous, dry_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'CHGCAR', 'INCAR'], calc_type='bs')
         modify_incar(os.path.join(dry_run, 'INCAR'), add= BS_SETTINGS | DRY_SETTINGS | INCAR_SETTINGS, remove=['KPAR', 'NCORE', 'NBANDS'])
         return os.path.abspath(dry_run)
 
@@ -229,7 +233,7 @@ def t_bs(folder, part, previous=os.path.join(CALCULATION_PATH, f't_geo/03_t_scf'
         if INCLUDE_DRY_RUN:
             bs_run = create_folder(folder, '01_t_bs')
             dry_run = os.path.join(folder, '00_t_dry')
-            copy_files(dry_run, bs_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'INCAR', 'CHGCAR'])
+            copy_files(dry_run, bs_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'INCAR', 'CHGCAR'], calc_type='bs')
             if any(k not in INCAR_SETTINGS for k in ['NCORE', 'NPAR', 'KPAR']):
                 NKPTS, NBANDS = get_NKPTS_NBANDS(os.path.join(dry_run, 'OUTCAR'))
                 out =  add_parallelization(NKPTS, math.ceil(NBANDS*BS_BANDS_MULTIPLIER))
@@ -238,18 +242,21 @@ def t_bs(folder, part, previous=os.path.join(CALCULATION_PATH, f't_geo/03_t_scf'
             return os.path.abspath(bs_run)
         else:
             bs_run = create_folder(folder, '01_t_bs')
-            copy_files(previous, bs_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'CHGCAR', 'INCAR'])
+            copy_files(previous, bs_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'CHGCAR', 'INCAR'], calc_type='bs')
             modify_incar(os.path.join(bs_run, 'INCAR'), add= BS_SETTINGS | INCAR_SETTINGS)
             return os.path.abspath(bs_run)
 
+    else:
+        raise RuntimeError(f"Step t_bs doesn't have part: {part}")
+    
+
 # ===== Density of states workflow (non-SOC) =====
 # Dry run sets finer kmesh, DOS range; second step does calculation
-
 def t_dos(folder, part, previous=os.path.join(CALCULATION_PATH, f't_geo/03_t_scf')):
     if part == 'dry':
         # Dry run: generate KPOINTS mesh and set energy range from E-fermi
         dry_run = create_folder(folder, '00_t_dry')
-        copy_files(previous, dry_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'CHGCAR', 'INCAR'])
+        copy_files(previous, dry_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'CHGCAR', 'INCAR'], calc_type='dos')
 
         # Determines the energy range for DOS calculation, currently e_fermi +- DOS_RANGE
         if 'EMAX' not in DOS_SETTINGS.keys() or 'EMIN' not in DOS_SETTINGS.keys():
@@ -273,7 +280,7 @@ def t_dos(folder, part, previous=os.path.join(CALCULATION_PATH, f't_geo/03_t_scf
         if INCLUDE_DRY_RUN:
             bs_run = create_folder(folder, '01_t_dos')
             dry_run = os.path.join(folder, '00_t_dry')
-            copy_files(dry_run, bs_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'INCAR', 'CHGCAR'])
+            copy_files(dry_run, bs_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'INCAR', 'CHGCAR'], calc_type='dos')
             if any(k not in INCAR_SETTINGS for k in ['NCORE', 'NPAR', 'KPAR']):
                 NKPTS, NBANDS = get_NKPTS_NBANDS(os.path.join(dry_run, 'OUTCAR'))
                 out =  add_parallelization(NKPTS, math.ceil(NBANDS*DOS_BANDS_MULTIPLIER))
@@ -282,7 +289,7 @@ def t_dos(folder, part, previous=os.path.join(CALCULATION_PATH, f't_geo/03_t_scf
             return os.path.abspath(bs_run)
         else:
             dos_run = create_folder(folder, '01_t_dos')
-            copy_files(previous, dos_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'CHGCAR', 'INCAR'])
+            copy_files(previous, dos_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'CHGCAR', 'INCAR'], calc_type='dos')
             # Determines the energy range for DOS calculation, currently e_fermi +- DOS_RANGE
             if 'EMAX' not in DOS_SETTINGS.keys() or 'EMIN' not in DOS_SETTINGS.keys():
                 with open(LOGFILE, 'a') as log:
@@ -290,6 +297,8 @@ def t_dos(folder, part, previous=os.path.join(CALCULATION_PATH, f't_geo/03_t_scf
             modify_incar(os.path.join(dos_run, 'INCAR'), add= DOS_SETTINGS| INCAR_SETTINGS)
             return os.path.abspath(dos_run)
 
+    else:
+        raise RuntimeError(f"Step t_dos doesn't have part: {part}")
 
 
 # ===== SCF with SOC =====
@@ -319,6 +328,10 @@ def t_scf_so(folder, part, previous=os.path.join(CALCULATION_PATH, f't_geo/03_t_
             copy_files(previous, scf_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'INCAR'])
             modify_incar(os.path.join(scf_run, 'INCAR'), add= SOC_SETTINGS | INCAR_SETTINGS)
             return os.path.abspath(scf_run)
+        
+    else:
+        raise RuntimeError(f"Step t_scf_so doesn't have part: {part}")
+    
 
 # ===== Geometry optimization with SOC =====
 # Follows dry run → CG opt → Newton opt → SCF → report
@@ -374,6 +387,9 @@ def t_geo_so(folder, part, previous=os.path.join(CALCULATION_PATH, 't_scf_so/01_
         scf_run = os.path.join(folder, '03_t_scf_so')
         create_report(os.path.join(scf_run, 'vaspout.h5'), os.path.join(scf_run, 'report.pdf'))
 
+    else:
+        raise RuntimeError(f"Step t_geo_so doesn't have part: {part}")
+
 
 # ===== Band structure with SOC =====
 # Dry run sets k-path, then band structure run
@@ -381,7 +397,7 @@ def t_bs_so(folder, part, previous=os.path.join(CALCULATION_PATH, 't_geo_so/03_t
     if part == 'dry':
         # Dry run: copy files, set k-path, adjust INCAR
         dry_run = create_folder(folder, '00_t_dry_so')
-        copy_files(previous, dry_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'CHGCAR', 'INCAR'])
+        copy_files(previous, dry_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'CHGCAR', 'INCAR'], calc_type='bs')
         modify_incar(os.path.join(dry_run, 'INCAR'), add= BS_SETTINGS | SOC_SETTINGS | DRY_SETTINGS | INCAR_SETTINGS, remove=['KPAR', 'NCORE', 'NBANDS'])
         return os.path.abspath(dry_run)
 
@@ -390,7 +406,7 @@ def t_bs_so(folder, part, previous=os.path.join(CALCULATION_PATH, 't_geo_so/03_t
         if INCLUDE_DRY_RUN:
             bs_run = create_folder(folder, '01_t_bs_so')
             dry_run = os.path.join(folder, '00_t_dry_so')
-            copy_files(dry_run, bs_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'INCAR', 'CHGCAR'])
+            copy_files(dry_run, bs_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'INCAR', 'CHGCAR'], calc_type='bs')
             if any(k not in INCAR_SETTINGS for k in ['NCORE', 'NPAR', 'KPAR']):
                 NKPTS, NBANDS = get_NKPTS_NBANDS(os.path.join(dry_run, 'OUTCAR'))
                 out =  add_parallelization(NKPTS, math.ceil(NBANDS*BS_BANDS_MULTIPLIER))
@@ -399,9 +415,13 @@ def t_bs_so(folder, part, previous=os.path.join(CALCULATION_PATH, 't_geo_so/03_t
             return os.path.abspath(bs_run)
         else:
             bs_run = create_folder(folder, '01_t_bs_so')
-            copy_files(previous, bs_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'CHGCAR', 'INCAR'])
+            copy_files(previous, bs_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'CHGCAR', 'INCAR'], calc_type='bs')
             modify_incar(os.path.join(bs_run, 'INCAR'), add= BS_SETTINGS | SOC_SETTINGS | INCAR_SETTINGS)
             return os.path.abspath(bs_run)
+
+    else:
+        raise RuntimeError(f"Step t_bs_so doesn't have part: {part}")
+    
 
 # ===== Density of states with SOC =====
 # Dry run prepares kmesh + DOS range, second step runs calculation
@@ -409,7 +429,7 @@ def t_dos_so(folder, part, previous=os.path.join(CALCULATION_PATH, 't_geo_so/03_
     if part == 'dry':
         # Dry run: generate denser kmesh, set DOS range around E-fermi
         dry_run = create_folder(folder, '00_t_dry_so')
-        copy_files(previous, dry_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'CHGCAR', 'INCAR'])
+        copy_files(previous, dry_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'CHGCAR', 'INCAR'], calc_type='dos')
 
         # Determines the energy range for DOS calculation, currently e_fermi +- 6 eV, 1 meV resolution
         if 'EMAX' not in DOS_SETTINGS.keys() or 'EMIN' not in DOS_SETTINGS:
@@ -432,7 +452,7 @@ def t_dos_so(folder, part, previous=os.path.join(CALCULATION_PATH, 't_geo_so/03_
         if INCLUDE_DRY_RUN:
             bs_run = create_folder(folder, '01_t_dos_so')
             dry_run = os.path.join(folder, '00_t_dry_so')
-            copy_files(dry_run, bs_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'INCAR', 'CHGCAR'])
+            copy_files(dry_run, bs_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'INCAR', 'CHGCAR'], calc_type='dos')
             if any(k not in INCAR_SETTINGS for k in ['NCORE', 'NPAR', 'KPAR']):
                 NKPTS, NBANDS = get_NKPTS_NBANDS(os.path.join(dry_run, 'OUTCAR'))
                 out =  add_parallelization(NKPTS, math.ceil(NBANDS*DOS_BANDS_MULTIPLIER))
@@ -441,14 +461,16 @@ def t_dos_so(folder, part, previous=os.path.join(CALCULATION_PATH, 't_geo_so/03_
             return os.path.abspath(bs_run)
         else:
             dos_run = create_folder(folder, '01_t_dos_so')
-            copy_files(previous, dos_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'CHGCAR', 'INCAR'])
+            copy_files(previous, dos_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'CHGCAR', 'INCAR'], calc_type='dos')
             # Determines the energy range for DOS calculation, currently e_fermi +- 6 eV, 1 meV resolution
             if 'EMAX' not in DOS_SETTINGS.keys() or 'EMIN' not in DOS_SETTINGS:
                 with open(LOGFILE, 'a') as log:
                     log.write('EMIN or/and EMAX not specified, using default VASP values\n')
             modify_incar(os.path.join(dos_run, 'INCAR'), add= DOS_SETTINGS | SOC_SETTINGS | INCAR_SETTINGS, remove=['KPAR', 'NCORE', 'NBANDS'])
             return os.path.abspath(dos_run)
-
+        
+    else:
+        raise RuntimeError(f"Step t_dos_so doesn't have part: {part}")
 
 
 # ===== Helper functions =====
@@ -471,7 +493,7 @@ def create_potcar(elements, potcar_path):
 # Handles copying files and creates the missing files if possible
 # Currently POSCAR and CHGCAR (in case of BS and DOS calculations) are the only essential files
 # Can handle missing KPOINTS, POTCAR and INCAR files
-def copy_files(from_path, to_path, files):
+def copy_files(from_path, to_path, files, calc_type='scf'):
     with open(LOGFILE, 'a') as log:
         for file in files:
             src = os.path.join(from_path, file)
@@ -482,7 +504,7 @@ def copy_files(from_path, to_path, files):
                     shutil.copyfile(src, dst)
                 else:
                     with open(src, 'r') as f:
-                        if 't_bs' in args.step:
+                        if calc_type == 'bs':
                             if f.readlines()[2].split()[0] == 'line':
                                 shutil.copyfile(src, dst)
                             else:
@@ -500,7 +522,7 @@ def copy_files(from_path, to_path, files):
                     raise FileNotFoundError("POSCAR file is missing. Cannot proceed.")
                 
                 elif file == 'KPOINTS':
-                    if 'dos' in args.step:
+                    if calc_type == 'dos':
                         INCAR_SETTINGS['KSPACING'] = DOS_KSPACING
                         log.write(f'KPOINTS not supplied, specifying default KSPACING = {DOS_KSPACING}\n')
                     else:
@@ -547,7 +569,7 @@ def copy_files(from_path, to_path, files):
 def create_folder(path, folder_name):
     name = os.path.join(path, folder_name)
     try:
-        os.mkdir(name)
+        os.makedirs(name, exist_ok=True)
     except:
         pass
     return name
@@ -769,31 +791,34 @@ def add_parallelization(nkpts, nbands):
 
 
 
-
-# ===== Main working part of the script ======
+# ===== Main working part of the script if run from CLI ======
 # Here a corresponding step is launched based on the inputs from console by specifying
 # --step (eg. t_scf, t_geo_so ...) and the corresponding --part (eg. dry, bs, cg_opt) 
 
-parser = argparse.ArgumentParser(description="Input agruments for the script")
-parser.add_argument("--step", type=str, help="Step")
-parser.add_argument("--part", type=str, help="Part of the step")
-args = parser.parse_args()
+if __name__ == "__main__":
 
-# Helped dict for handling how the STEPS variable is set up
-step_paths_dict = {
-    't_scf': os.path.join(CALCULATION_PATH, 't_scf/01_t_scf'),
-    't_geo': os.path.join(CALCULATION_PATH, 't_geo/03_t_scf'),
-    't_bs': os.path.join(CALCULATION_PATH, 't_bs/01_t_bs'),
-    't_dos': os.path.join(CALCULATION_PATH, 't_dos/01_t_dos'),
-    't_scf_so': os.path.join(CALCULATION_PATH, 't_scf_so/01_t_scf_so'),
-    't_geo_so': os.path.join(CALCULATION_PATH, 't_geo_so/03_t_scf_so'),
-    't_bs_so': os.path.join(CALCULATION_PATH, 't_bs_so/01_t_bs_so'),
-    't_dos_so': os.path.join(CALCULATION_PATH, 't_dos_so/01_t_dos_so')
-}
+    parser = argparse.ArgumentParser(description="Input agruments for the script")
+    parser.add_argument("--step", type=str, help="Step")
+    parser.add_argument("--part", type=str, help="Part of the step")
+    args = parser.parse_args()
 
-with open(LOGFILE, 'a') as log: log.write(f'Starting step {args.step} part {args.part}\n')
+    # Helped dict for handling how the STEPS variable is set up
+    step_paths_dict = {
+        't_scf': os.path.join(CALCULATION_PATH, 't_scf/01_t_scf'),
+        't_geo': os.path.join(CALCULATION_PATH, 't_geo/03_t_scf'),
+        't_bs': os.path.join(CALCULATION_PATH, 't_bs/01_t_bs'),
+        't_dos': os.path.join(CALCULATION_PATH, 't_dos/01_t_dos'),
+        't_scf_so': os.path.join(CALCULATION_PATH, 't_scf_so/01_t_scf_so'),
+        't_geo_so': os.path.join(CALCULATION_PATH, 't_geo_so/03_t_scf_so'),
+        't_bs_so': os.path.join(CALCULATION_PATH, 't_bs_so/01_t_bs_so'),
+        't_dos_so': os.path.join(CALCULATION_PATH, 't_dos_so/01_t_dos_so')
+    }
 
-if STEPS[args.step] in step_paths_dict.keys():
-    path = create_step(step=args.step, part=args.part, copy_path=step_paths_dict[STEPS[args.step]])
-else:
-    path = create_step(step=args.step, part=args.part, copy_path=STEPS[args.step])
+    with open(LOGFILE, 'a') as log: log.write(f'Starting step {args.step} part {args.part}\n')
+
+    if STEPS[args.step] in step_paths_dict.keys():
+        path = create_step(step=args.step, part=args.part, copy_path=step_paths_dict[STEPS[args.step]])
+    else:
+        path = create_step(step=args.step, part=args.part, copy_path=STEPS[args.step])
+
+
