@@ -791,7 +791,7 @@ step_paths_dict = {
     't_dos_so': os.path.join(CALCULATION_PATH, 't_dos_so/01_t_dos_so')
 }
 
-with open(LOGFILE, 'a') as log: log.write(f'Starting step {args.step} part {args.part}')
+with open(LOGFILE, 'a') as log: log.write(f'Starting step {args.step} part {args.part}\n')
 
 if STEPS[args.step] in step_paths_dict.keys():
     path = create_step(step=args.step, part=args.part, copy_path=step_paths_dict[STEPS[args.step]])
