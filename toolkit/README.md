@@ -19,7 +19,7 @@ git clone https://github.com/mszyszko-uw/vasp-processing.git
 
 Install requirements:
 
-* Python ≥ 3.6
+* Python ≥ 3.9
 * pip ≥ 19.0
 * simple_slurm==0.3.6
 * PyYAML==6.0.2
