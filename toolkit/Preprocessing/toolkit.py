@@ -453,6 +453,7 @@ def t_dos_so(folder, part, previous=os.path.join(CALCULATION_PATH, 't_geo_so/03_
 
 # ===== Helper functions =====
 # Functions used inside steps for copying files, processing them, extracting information etc.
+# Not intended to be explicitly used by the user, but can be used to create new user-specific steps
 
 # Creates a POTCAR file based on the VASP recommended, if POTCAR wasn't supplied by the user
 def create_potcar(elements, potcar_path):
