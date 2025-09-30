@@ -64,10 +64,10 @@ def t_scf(folder, part, previous=''):
             scf_run = create_folder(folder, '01_t_scf')
             dry_run = os.path.join(folder, '00_t_dry')
             copy_files(dry_run, scf_run, ['KPOINTS', 'POSCAR', 'POTCAR', 'INCAR'])
-            if any(k not in INCAR_SETTINGS for k in ['NCORE', 'NPAR', 'KPAR']):
-                NKPTS, NBANDS = get_NKPTS_NBANDS(os.path.join(dry_run, 'OUTCAR'))
-                out =  add_parallelization(NKPTS, NBANDS)
-                with open(LOGFILE, 'a') as log: log.write(out)
+            #if any(k not in INCAR_SETTINGS for k in ['NCORE', 'NPAR', 'KPAR']):
+            #    NKPTS, NBANDS = get_NKPTS_NBANDS(os.path.join(dry_run, 'OUTCAR'))
+            #    out =  add_parallelization(NKPTS, NBANDS)
+            #    with open(LOGFILE, 'a') as log: log.write(out)
             modify_incar(os.path.join(scf_run, 'INCAR'), remove= DRY_SETTINGS, add= INCAR_SETTINGS)
             return os.path.abspath(scf_run)
         else:
@@ -689,7 +689,8 @@ def convergence_report(folder, kmesh_list, encut_list, pressure_threshhold=1, fo
         data['b'][kmesh_key] = []
         data['c'][kmesh_key] = []
         data['converged'][kmesh_key] = []
-
+        data['energy'][kmesh_key] = []
+        
         for encut in encut_list:
             filepath = os.path.join(folder, kmesh_key, f'e{encut}', '03_t_scf', 'vaspout.h5')
             print(filepath)
