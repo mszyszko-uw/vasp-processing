@@ -26,7 +26,7 @@ The central script, `toolkit.py`, automates common VASP workflows such as SCF ru
   - Adds/removes tags depending on the step.  
   - Generates missing input files when possible.  
 - **POTCAR management** from recommended pseudopotentials.  
-- **Automatic parallelization settings** (`NCORE`, `KPAR`).  
+- **Automatic parallelization settings** (`NCORE`, `KPAR`) in case the user doesn't set these variables.  
 - **Report generation**:
   - PDF summaries for geometry optimization and SCF runs.  
   - CSV convergence reports.  
