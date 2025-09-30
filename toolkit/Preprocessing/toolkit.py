@@ -42,6 +42,12 @@ def create_step(step, part, copy_path):
         print(t_dos_so(os.path.join(CALCULATION_PATH, 't_dos_so'), part, previous=copy_path))
 
 
+# ===== Supported Steps =====
+# Each step consists of many parts, referenced with the part variable
+# Every step function has 3 input variables: folder in which the files will be created, part of the step and the directory with the previous files needed for creating inputs
+# All functions give the directory with the files as output, which is printed in case of running the toolkit.py from CLI
+
+
 # ===== Standard SCF step (non-SOC) =====
 # Handles dry run and SCF run
 
@@ -462,6 +468,8 @@ def create_potcar(elements, potcar_path):
 
 
 # Handles copying files and creates the missing files if possible
+# Currently POSCAR and CHGCAR (in case of BS and DOS calculations) are the only essential files
+# Can handle missing KPOINTS, POTCAR and INCAR files
 def copy_files(from_path, to_path, files):
     with open(LOGFILE, 'a') as log:
         for file in files:
@@ -545,6 +553,7 @@ def create_folder(path, folder_name):
       
 # Modifying existing INCAR file based on the settings
 # Uses dictionaries as input (can also be the list of tag names to remove)
+# Uses 3 input variables: file path (file doesn't need to exist), list/dict of VASP parameters to remove and dict of parameters to add
 def modify_incar(file, remove=None, add=None):
     remove = remove or []
     add = add or {}
@@ -577,6 +586,7 @@ def modify_incar(file, remove=None, add=None):
         for key in incar_dict: 
             f.write(f"{key} = {incar_dict[key]}\n")
 
+# DEPRECATED
 # Extract parallelization variables (KPAR, NBANDS) from vaspout.h5
 # Returns NBANDS divisible by 4 to set NPAR = 4 easily
 def get_parallelization_variables(vaspout_file):
@@ -586,14 +596,15 @@ def get_parallelization_variables(vaspout_file):
         nbands = nbands if nbands % 4 == 0 else ((nbands // 4) + 1) * 4
         kpar = max(i for i in range(1, 20) if nkpts % i == 0)
         return kpar, nbands
-    
+
+
 # Creates .pdf reports for SCF steps, that contain basic information about convergence
+# Contains ionic forces, diagonal values of stress tensor and a plot of convergence 
 def create_report(vaspout, save_path):
     with h5py.File(vaspout, "r") as f:
         forces = f['intermediate/ion_dynamics/forces'][:]
         stress = f['intermediate/ion_dynamics/stress'][:]
         oszicar = f['intermediate/ion_dynamics/oszicar'][:]
-        magnetism = f['intermediate/ion_dynamics/magnetism/spin_moments/values'][:]
 
         results = {
             "Stress in kB": f"[{stress[0,0,0]:.4f}, {stress[0, 1, 1]:.4f}, {stress[0, 2, 2]:.4f}]"
@@ -645,6 +656,7 @@ def create_report(vaspout, save_path):
     plt.close()
 
 # Report for convergence study for different kmeshes and encuts, gives the result in .csv format
+# Contains all lattice constants, total energy and if the calculation is converged (based on pressure_threshhold and forces_threshhold)
 def convergence_report(folder, kmesh_list, encut_list, pressure_threshhold=1, forces_threshhold=1e-3):
     data = {'a': {}, 'b': {}, 'c': {}, 'converged': {}, 'energy': {}}
 
@@ -723,7 +735,7 @@ def get_NKPTS_NBANDS(file):
                 break
     return nkpts, nbands
 
-
+# Helper function that divisors of a number
 def divisors(n):
     divs = []
     for i in range(1, int(math.sqrt(n)) + 1):
@@ -733,7 +745,7 @@ def divisors(n):
                 divs.append(n // i)
     return sorted(divs)
     
-
+# Adds parallelization settings (NCORE and KPAR) to the INCAR_SETTINGS, maximizing the number of CPUs used
 def add_parallelization(nkpts, nbands):    
     # Possible NCORE: common divisors of nbands and cpu_per_socket
     possible_ncore = [d for d in divisors(nbands) if d in divisors(CPU_PER_SOCKET)]
@@ -766,7 +778,7 @@ parser.add_argument("--step", type=str, help="Step")
 parser.add_argument("--part", type=str, help="Part of the step")
 args = parser.parse_args()
 
-
+# Helped dict for handling how the STEPS variable is set up
 step_paths_dict = {
     't_scf': os.path.join(CALCULATION_PATH, 't_scf/01_t_scf'),
     't_geo': os.path.join(CALCULATION_PATH, 't_geo/03_t_scf'),
