@@ -111,3 +111,5 @@ TO DO
 ### 6. Analyze the results
 Refer to **Postprocessing.ipynb**
 
+### Notes
+Folders present in this directory contain files created by the toolkit, necessary to run the VASP calculations, if you want to recreate the results, as well as vaspout.h5 files for non SOC calculations to compare results.
