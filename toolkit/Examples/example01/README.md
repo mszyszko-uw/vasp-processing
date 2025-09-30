@@ -32,7 +32,7 @@ Specify system-specific overrides in **`input.py`**. In this example the full wo
 ```python
 from defaults import *
 
-CALCULATION_PATH = "example01"
+CALCULATION_PATH = "example01_calc"
 
 STEPS = {
     't_scf': 'your POSCAR & KPOINTS path',    
@@ -69,7 +69,7 @@ After the `t_conv_test` step is finished, check the file `t_conv_test/convergenc
 ```python
 from defaults import *
 
-CALCULATION_PATH = "example01"
+CALCULATION_PATH = "example01_calc"
 STEPS = {
     't_scf': 'path containing POSCAR & KPOINTS',    
     't_geo': 't_scf',
