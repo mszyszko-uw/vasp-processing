@@ -1,6 +1,6 @@
 import argparse
 
-avalable_steps = ('scf', 'scf_so', 'geo', 'geo_so', 'bs', 'bs_so', 'dos', 'dos_so', 'eps', 'epsfcn', 'meff', 'selrul', 'gband', 'gexc', 'test_1', 'test_2')
+avalable_steps = ('scf', 'scf_so', 'geo', 'geo_so', 'bs', 'bs_so', 'dos', 'dos_so', 'conv_test', 'eps', 'epsfcn', 'meff', 'selrul', 'gband', 'gexc', 'test_1', 'test_2')
 
 def parse_part_values(values):
     if len(values) == 1 and values[0].lower() == 'all':
