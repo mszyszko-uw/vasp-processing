@@ -60,6 +60,7 @@ class slurm_job:
         self.cmds = self.env_array + ["module load " + self.module_name, self.env_cmd, self.run_commands]
         for cmd in self.cmds:
             self.slurm.add_cmd(cmd)
+        self.slurm.set_shell("/bin/bash -l")
          
     def print(self):
         print(self.slurm.__str__())
