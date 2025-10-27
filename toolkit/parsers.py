@@ -29,7 +29,7 @@ def read_cli_params():
     parser.add_argument("--id", type=str, help="Job ID (for details or cancellation).")
     parser.add_argument("-s", "--steps", help="Use steps (1,2,3 or 1-3")
     parser.add_argument("-a", "--array", action="store_true", help="Run job array based on step and path")
-    parser.add_argument("-d", "--dependency_step", help="A step that blocks rest of steps")
+    parser.add_argument("-d", "--dependency", help="A step that blocks rest of steps")
 #    check_action(parser.parse_args().action)
     return parser.parse_args()
 
