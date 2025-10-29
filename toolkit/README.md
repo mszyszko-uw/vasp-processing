@@ -165,7 +165,7 @@ postprocessing:  # step 2
 
    ```bash
    source toolbox_env/bin/activate
-   cd vasp-processing
+   cd vasp-processing/toolkit
    pip install -r requirements.txt
    ```
 
