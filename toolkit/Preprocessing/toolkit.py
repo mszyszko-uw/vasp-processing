@@ -2,8 +2,23 @@ import shutil, os, h5py, argparse, math
 import matplotlib.pyplot as plt
 import numpy as np
 
+
+parser = argparse.ArgumentParser(description="Input agruments for the script")
+parser.add_argument("--step", type=str, help="Step")
+parser.add_argument("--part", type=str, help="Part of the step")
+parser.add_argument("--input_script", type=str, help="Script used for preprocesing")
+args = parser.parse_args()
+
 # SETTINGS loaded from input (globals: paths, INCAR_SETTINGS, etc.)
-from input import *
+if args.input_script:
+    try:
+       module_name = file_name.replace(".py", "")
+       exec("from %s import *" % module_name)
+    except:
+       print("Incorect script for preprocesing.")
+else:
+    from input import *
+
 
 # Create main calculation directory if it does not exist
 try:
@@ -797,11 +812,6 @@ def add_parallelization(nkpts, nbands):
 # --step (eg. t_scf, t_geo_so ...) and the corresponding --part (eg. dry, bs, cg_opt) 
 
 if __name__ == "__main__":
-
-    parser = argparse.ArgumentParser(description="Input agruments for the script")
-    parser.add_argument("--step", type=str, help="Step")
-    parser.add_argument("--part", type=str, help="Part of the step")
-    args = parser.parse_args()
 
     # Helped dict for handling how the STEPS variable is set up
     step_paths_dict = {
