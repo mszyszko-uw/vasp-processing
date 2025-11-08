@@ -36,8 +36,12 @@ def main():
 	#RUN dry_run
         if params.steps:
             for step in steps:
-                run_local(steps_def, step, vasp_command="mpiexec vasp_std" )
-                cpus= set_parallelization("./", params.optimize_cpus)
+                if params.dryrun_path:
+                   dryrun_path = params.dryrun_path
+                else:
+                   run_local(steps_def, step, vasp_command="mpiexec vasp_std" )
+                   dryrun_path = "./"
+                cpus= set_parallelization(dryrun_path, params.optimize_cpus)
                 steps_jobs[step].add_option('ntasks', cpus)
         else:
             cpus= set_parallelization(params.optimize_cpus)
