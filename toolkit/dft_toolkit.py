@@ -8,6 +8,9 @@ from slurm_waiting_prediction import SLURM_make_times_report, get_available_reso
 from parsers import parse_part_values, read_cli_params, print_avalable_steps
 from read_steps import read_steps, create_job_steps
 
+from set_parallel import set_parallelization
+from run_local import run_local
+
 from job_class import slurm_job
 
 def main():
@@ -29,25 +32,36 @@ def main():
                 steps_jobs[step].set_path(params.path)
         else:
             job.set_path(params.path)
+    if params.optimize_cpus:
+	#RUN dry_run
+        if params.steps:
+            for step in steps:
+                run_local(steps_def, step, vasp_command="mpiexec vasp_std" )
+                cpus= set_parallelization("./", params.optimize_cpus)
+                steps_jobs[step].add_option('ntasks', cpus)
+        else:
+            cpus= set_parallelization(params.optimize_cpus)
+            job.add_option('ntasks', cpus)
     if params.array:
         if params.steps:
             for step in steps:
                 steps_jobs[step].add_array_from_path()
-
+#                steps_jobs[step].submit()
         else:
             job.add_array_from_path()
+#            job.submit()
 
-    if params.dependency:
+    if params.dependency_step:
         if params.steps:
             for step in steps:
-                steps_jobs[step].dependency = params.dependency
+                steps_jobs[step].dependency = params.dependency_step
         else:
-            job.dependency = params.dependency
+            job.dependency = params.dependency_step
 
     action = params.action[0]
-    if action == "list_free_nodes":
+    if action == "freenodes":
         get_available_resources(printing=True)
-    if action == "wating_estimation":
+    if action == "wating":
         SLURM_make_times_report()
     if action == "print":
         if params.steps:
@@ -77,12 +91,12 @@ def main():
                     job_id = steps_jobs[step].submit()
         else:
             job.submit()
-    if action == 'check_queue':
+    if action == 'checkqueue':
         subprocess.run(["squeue", "--me",])
     if params.id:
-        if action == 'cancel_job':
+        if action == 'canceljob':
             subprocess.run(["scancel", params.id])
-        if action == 'job_info':
+        if action == 'jobinfo':
             subprocess.run(["scontrol", "show", "job", params.id])
 #    job.predict_time()
 
