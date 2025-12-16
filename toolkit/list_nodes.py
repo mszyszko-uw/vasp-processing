@@ -1,8 +1,7 @@
 import subprocess
 import re
 
-def get_available_resources():
-    # Pobierz dane z `scontrol show node`
+def get_available_resources():`
     result = subprocess.run(["scontrol", "show", "node"], capture_output=True, text=True)
     raw_nodes = result.stdout.strip().split("\n\n")
 
@@ -28,7 +27,6 @@ def get_available_resources():
 
     return resources
 
-# Przykładowe użycie:
 if __name__ == "__main__":
     res = get_available_resources()
     for r in res:
