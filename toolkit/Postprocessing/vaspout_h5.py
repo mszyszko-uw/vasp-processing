@@ -197,7 +197,7 @@ class vaspout_h5:
 
         if len(self.ic.WDR_matrix) == 0 :
             self.read_WAVEDER()
-            nbands = self.ic.WDR_matrix.shape[1]
+        nbands = self.ic.WDR_matrix.shape[1]
             # bands_to_read = []
             # for band in bands_oi:
             #     if band not in self.known_bands():
