@@ -177,10 +177,14 @@ def BandStructurePlot(ic: InformationCollector,
 
     ax.vlines(Ktik[1:-1], [Emat.min()-100]*(len(Ktik)-2), [Emat.max()+100]*(len(Ktik)-2),
             color="black", linestyle=":")
-    ax.axhline(0, color="black", linestyle=":")
-    if E0==None:
-        ax.axhline(Egap, color="black", linestyle=":")
-        ax.annotate(f'{Egap:.3f}', xy = (Dvec[0], Egap))
+    
+    if 'nohlines' in kwargs.keys():
+        if kwargs['nohlines'] == True: pass
+    else:
+        ax.axhline(0, color="black", linestyle=":")
+        if E0==None:
+            ax.axhline(Egap, color="black", linestyle=":")
+            ax.annotate(f'{Egap:.3f}', xy = (Dvec[0], Egap))
 
     ax.set_xticks(Ktik, Klab)
     ax.set_xlim(Dvec[0], Dvec[-1])
