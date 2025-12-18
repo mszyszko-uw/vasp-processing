@@ -34,3 +34,7 @@ class InformationCollector:
         self.Emin = 0
         self.Emax = 0
         self.Ediff = 0
+
+        # WAVEDER
+        self.WDR_matrix = []
+        self.eval = []
