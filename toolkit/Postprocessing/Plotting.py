@@ -91,7 +91,7 @@ def DOSToGnuplot(Pdos, Edos,
 
 
 def BandStructurePlot(ic: InformationCollector,
-                      min_diff=.1, 
+                      min_diff=None, 
                       ax=None, 
                       E0=None, 
                       gnuplot=False, 
@@ -108,7 +108,7 @@ def BandStructurePlot(ic: InformationCollector,
 
     Args:
         ic (InformationCollector): _description_
-        min_diff (float): if band numbers are to be displayed, how far apart they should be to not group them. Defaults to .1
+        min_diff (None | float): if band numbers are to be displayed, how far apart they should be to not group them. If None (default) will set to (Emax-Emin)/100
         ax (plt.axes): to which axis should the plot be rendered. If None (default) uses plt.gca().     
         E0 (float | str): what energy should be used as 0. str options are ('fermi'). If None (default) will look for valence band maximum. 
         gnuplot (bool): should the plot be written to a file in gnuplot format. Defaults to False, 
@@ -118,6 +118,7 @@ def BandStructurePlot(ic: InformationCollector,
         color (int | float | str | None): same as in all pyplot figures. Defaults to None 
         mult (float): the dot size multiplier. Defaults to 1
         alpha (float): the dot opacity level in range [0, 1]. Defaults to .1
+        linestyle (str | (int,(int,int))): linestyle specifier for plots without projections. Refer to matplotlib linestyle documentation.
 
     Returns:
         _type_: _description_
@@ -148,6 +149,7 @@ def BandStructurePlot(ic: InformationCollector,
     if ax==None: ax = plt.gca()
 
     ### Band labelling
+    if min_diff == None: min_diff = (np.max(Emat) - np.min(Emat))/100
     if bandnums:
         diff = Emat[-1, 0]
         band_prev = 0
@@ -175,10 +177,14 @@ def BandStructurePlot(ic: InformationCollector,
 
     ax.vlines(Ktik[1:-1], [Emat.min()-100]*(len(Ktik)-2), [Emat.max()+100]*(len(Ktik)-2),
             color="black", linestyle=":")
-    ax.axhline(0, color="black", linestyle=":")
-    if E0==None:
-        ax.axhline(Egap, color="black", linestyle=":")
-        ax.annotate(f'{Egap:.3f}', xy = (Dvec[0], Egap))
+    
+    if 'nohlines' in kwargs.keys():
+        if kwargs['nohlines'] == True: pass
+    else:
+        ax.axhline(0, color="black", linestyle=":")
+        if E0==None:
+            ax.axhline(Egap, color="black", linestyle=":")
+            ax.annotate(f'{Egap:.3f}', xy = (Dvec[0], Egap))
 
     ax.set_xticks(Ktik, Klab)
     ax.set_xlim(Dvec[0], Dvec[-1])
