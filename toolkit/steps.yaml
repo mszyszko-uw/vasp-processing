@@ -6,19 +6,17 @@ scf:
     mem_per_cpu: "1GB"
   cmd: | 
     ulimit -s unlimited
-    module load  intel-compilers/2023.2.1  impi/2021.10.0   VASP/6.5.1-Dsingle_prec_bse
-    module load Python/3.11.5 matplotlib/3.8.2 h5py/3.11.0
     
     START_DIR="$(pwd)"
-    output=$(python3 toolkit.py --step t_scf --part dry)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_scf --part dry)
     cd "$output"
     mpiexec vasp_std > log
     
     cd "$START_DIR"
-    output=$(python3 toolkit.py --step t_scf --part scf)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_scf --part scf)
     cd "$output"
     mpiexec vasp_std > log
-    
+        
 geo:
   slurm: 
     time: "0:20:00"
@@ -27,31 +25,29 @@ geo:
     mem_per_cpu: "2GB"
   cmd: |  
     ulimit -s unlimited
-    module load  intel-compilers/2023.2.1  impi/2021.10.0   VASP/6.5.1-Dsingle_prec_bse
-    module load Python/3.11.5 matplotlib/3.8.2 h5py/3.11.0
-    
+
     START_DIR="$(pwd)"
-    output=$(python3 toolkit.py --step t_geo --part dry)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_geo --part dry)
     cd "$output"
     mpiexec vasp_std > log
     
     cd "$START_DIR"
-    output=$(python3 toolkit.py --step t_geo --part cg_opt)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_geo --part cg_opt)
     cd "$output"
     mpiexec vasp_std > log
     
     cd "$START_DIR"
-    output=$(python3 toolkit.py --step t_geo --part nw_opt)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_geo --part nw_opt)
     cd "$output"
     mpiexec vasp_std > log
     
     cd "$START_DIR"
-    output=$(python3 toolkit.py --step t_geo --part scf)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_geo --part scf)
     cd "$output"
     mpiexec vasp_std > log
     
     cd "$START_DIR"
-    python3 toolkit.py --step t_geo --part report
+    python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_geo --part report
     
 conv_test:
   slurm: 
@@ -61,12 +57,10 @@ conv_test:
     mem_per_cpu: "2GB"
   cmd: |  
     ulimit -s unlimited
-    module load  intel-compilers/2023.2.1  impi/2021.10.0   VASP/6.5.1-Dsingle_prec_bse
-    module load Python/3.11.5 matplotlib/3.8.2 h5py/3.11.0
+
+    START_DIR="$(pwd)"
     
-    START_DIR="$(pwd)"  
-    
-    mapfile -t my_paths < <(python3 toolkit.py --step t_conv_test --part dry)
+    mapfile -t my_paths < <(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_conv_test --part dry)
     for p in "${my_paths[@]}"; do
       cd "$p"
       echo "$p"
@@ -75,7 +69,7 @@ conv_test:
     done
     
     cd "$START_DIR"
-    mapfile -t my_paths < <(python3 toolkit.py --step t_conv_test--part cg_opt)
+    mapfile -t my_paths < <(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_conv_test --part cg_opt)
     for p in "${my_paths[@]}"; do
       cd "$p"
       echo "$p"
@@ -84,7 +78,7 @@ conv_test:
     done
     
     cd "$START_DIR"
-    mapfile -t my_paths < <(python3 toolkit.py --step t_conv_test --part nw_opt)
+    mapfile -t my_paths < <(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_conv_test --part nw_opt)
     for p in "${my_paths[@]}"; do
       cd "$p"
       echo "$p"
@@ -93,7 +87,7 @@ conv_test:
     done
     
     cd "$START_DIR"
-    mapfile -t my_paths < <(python3 toolkit.py --step t_conv_test --part scf)
+    mapfile -t my_paths < <(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_conv_test --part scf)
     for p in "${my_paths[@]}"; do
       cd "$p"
       echo "$p"
@@ -102,7 +96,7 @@ conv_test:
     done
     
     cd "$START_DIR"
-    python3 toolkit.py --step t_conv_test --part report
+    python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_conv_test --part report
 
 bs:
   slurm: 
@@ -112,18 +106,18 @@ bs:
     mem_per_cpu: "1GB"
   cmd: |
     ulimit -s unlimited
-    module load  intel-compilers/2023.2.1  impi/2021.10.0   VASP/6.5.1-Dsingle_prec_bse
-    module load Python/3.11.5 matplotlib/3.8.2 h5py/3.11.0
-    
+
     START_DIR="$(pwd)"
-    output=$(python3 toolkit.py --step t_bs --part dry)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_bs --part dry)
     cd "$output"
     mpiexec vasp_std > log
     
     cd "$START_DIR"
-    output=$(python3 toolkit.py --step t_bs --part bs)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_bs --part bs)
     cd "$output"
-    mpiexec vasp_std > log 
+    mpiexec vasp_std > log
+    
+    python3 $START_DIR/Postprocessing/BS_report_post.py 
     
 dos:
   slurm: 
@@ -133,18 +127,18 @@ dos:
     mem_per_cpu: "2GB"
   cmd: |    
     ulimit -s unlimited
-    module load  intel-compilers/2023.2.1  impi/2021.10.0   VASP/6.5.1-Dsingle_prec_bse
-    module load Python/3.11.5 matplotlib/3.8.2 h5py/3.11.0
-    
+
     START_DIR="$(pwd)"
-    output=$(python3 toolkit.py --step t_dos --part dry)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_dos --part dry)
     cd "$output"
     mpiexec vasp_std > log
     
     cd "$START_DIR"
-    output=$(python3 toolkit.py --step t_dos --part dos)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_dos --part dos)
     cd "$output"
     mpiexec vasp_std > log
+    
+    python3 $START_DIR/Postprocessing/DOS_report_post.py
     
 scf_so:
   slurm: 
@@ -154,16 +148,14 @@ scf_so:
     mem_per_cpu: "1GB"
   cmd: |
     ulimit -s unlimited
-    module load  intel-compilers/2023.2.1  impi/2021.10.0   VASP/6.5.1-Dsingle_prec_bse
-    module load Python/3.11.5 matplotlib/3.8.2 h5py/3.11.0
     
     START_DIR="$(pwd)"
-    output=$(python3 toolkit.py --step t_scf_so --part dry)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_scf_so --part dry)
     cd "$output"
     mpiexec vasp_ncl > log
     
     cd "$START_DIR"
-    output=$(python3 toolkit.py --step t_scf_so --part scf)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_scf_so --part scf)
     cd "$output"
     mpiexec vasp_ncl > log
     
@@ -175,31 +167,29 @@ geo_so:
     mem_per_cpu: "2GB"
   cmd: |
     ulimit -s unlimited
-    module load  intel-compilers/2023.2.1  impi/2021.10.0   VASP/6.5.1-Dsingle_prec_bse
-    module load Python/3.11.5 matplotlib/3.8.2 h5py/3.11.0
     
     START_DIR="$(pwd)"
-    output=$(python3 toolkit.py --step t_geo_so --part dry)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_geo_so --part dry)
     cd "$output"
     mpiexec vasp_ncl > log
     
     cd "$START_DIR"
-    output=$(python3 toolkit.py --step t_geo_so --part cg_opt)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_geo_so --part cg_opt)
     cd "$output"
     mpiexec vasp_ncl > log
     
     cd "$START_DIR"
-    output=$(python3 toolkit.py --step t_geo_so --part nw_opt)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_geo_so --part nw_opt)
     cd "$output"
     mpiexec vasp_ncl > log
     
     cd "$START_DIR"
-    output=$(python3 toolkit.py --step t_geo_so --part scf)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_geo_so --part scf)
     cd "$output"
     mpiexec vasp_ncl > log
     
     cd "$START_DIR"
-    python3 toolkit.py --step t_geo_so --part report > error_rep
+    python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_geo_so --part report
     
 bs_so:
   slurm: 
@@ -209,18 +199,19 @@ bs_so:
     mem_per_cpu: "2GB"
   cmd: |
     ulimit -s unlimited
-    module load  intel-compilers/2023.2.1  impi/2021.10.0   VASP/6.5.1-Dsingle_prec_bse
-    module load Python/3.11.5 matplotlib/3.8.2 h5py/3.11.0
-    
+
     START_DIR="$(pwd)"
-    output=$(python3 toolkit.py --step t_bs_so --part dry)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_bs_so --part dry)
     cd "$output"
     mpiexec vasp_ncl > log
     
     cd "$START_DIR"
-    output=$(python3 toolkit.py --step t_bs_so --part bs)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_bs_so --part bs)
     cd "$output"
     mpiexec vasp_ncl > log
+    
+    python3 $START_DIR/Postprocessing/BS_report_post.py
+    python3 $START_DIR/Postprocessing/extract_magmom.py
     
 dos_so:
   slurm: 
@@ -229,19 +220,20 @@ dos_so:
     ntasks: 72
     mem_per_cpu: "4GB"
   cmd: |
-    ulimit -s unlimited
-    module load  intel-compilers/2023.2.1  impi/2021.10.0   VASP/6.5.1-Dsingle_prec_bse
-    module load Python/3.11.5 matplotlib/3.8.2 h5py/3.11.0
-    
+    ulimit -s unlimited    
+
     START_DIR="$(pwd)"
-    output=$(python3 toolkit.py --step t_dos_so --part dry)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_dos_so --part dry)
     cd "$output"
     mpiexec vasp_ncl > log
     
     cd "$START_DIR"
-    output=$(python3 toolkit.py --step t_dos_so --part dos)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_dos_so --part dos)
     cd "$output"
     mpiexec vasp_ncl > log
+    
+    python3 $START_DIR/Postprocessing/DOS_report_post.py
+    python3 $START_DIR/Postprocessing/extract_magmom.py
     
 test_1:
   cmd:
