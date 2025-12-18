@@ -1,23 +1,35 @@
 import shutil, os, h5py, argparse, math
 import matplotlib.pyplot as plt
 import numpy as np
+import importlib.util
+from pathlib import Path
+import sys
+from defaults import *
 
 
 parser = argparse.ArgumentParser(description="Input agruments for the script")
 parser.add_argument("--step", type=str, help="Step")
 parser.add_argument("--part", type=str, help="Part of the step")
-parser.add_argument("--input_script", type=str, help="Script used for preprocesing")
+parser.add_argument("--input", type=str, help="Input file")
 args = parser.parse_args()
 
 # SETTINGS loaded from input (globals: paths, INCAR_SETTINGS, etc.)
-if args.input_script:
-    try:
-       module_name = file_name.replace(".py", "")
-       exec("from %s import *" % module_name)
-    except:
-       print("Incorect script for preprocesing.")
+if args.input:
+    input_path = Path(args.input).resolve()
 else:
-    from input import *
+    input_path = Path("input.py").resolve()
+
+if not input_path.exists():
+    raise FileNotFoundError(f"Input file not found: {input_path}")
+
+spec = importlib.util.spec_from_file_location("user_input", input_path)
+user_input = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(user_input)
+globals().update({k: v for k, v in user_input.__dict__.items() if not k.startswith("__")})
+
+for key in STEPS.keys():
+    if not STEPS[key]:
+        STEPS[key] = os.path.dirname(input_path)
 
 
 # Create main calculation directory if it does not exist
@@ -494,7 +506,9 @@ def t_dos_so(folder, part, previous=os.path.join(CALCULATION_PATH, 't_geo_so/03_
 
 # Creates a POTCAR file based on the VASP recommended, if POTCAR wasn't supplied by the user
 def create_potcar(elements, potcar_path):
-    with open('recomended_pseudopotentials.txt', 'r') as f, open(potcar_path, 'w') as POTCAR:
+    script_path = os.path.abspath(__file__)
+    recommended_pseudopotentials = script_path.replace('toolkit.py', 'recomended_pseudopotentials.txt')
+    with open(recommended_pseudopotentials, 'r') as f, open(potcar_path, 'w') as POTCAR:
         lines = f.readlines()
         potcar_paths = {}
         for line in lines:
@@ -812,6 +826,8 @@ def add_parallelization(nkpts, nbands):
 # --step (eg. t_scf, t_geo_so ...) and the corresponding --part (eg. dry, bs, cg_opt) 
 
 if __name__ == "__main__":
+
+
 
     # Helped dict for handling how the STEPS variable is set up
     step_paths_dict = {
