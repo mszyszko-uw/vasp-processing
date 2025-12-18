@@ -8,6 +8,9 @@ from slurm_waiting_prediction import SLURM_make_times_report, get_available_reso
 from parsers import parse_part_values, read_cli_params, print_avalable_steps
 from read_steps import read_steps, create_job_steps
 
+from set_parallel import set_parallelization
+from run_local import run_local
+
 from job_class import slurm_job
 
 def main():
@@ -22,13 +25,31 @@ def main():
     if params.steps:
         steps=parse_part_values(params.steps)
         steps_def = read_steps()
-        steps_jobs = create_job_steps(steps, steps_def, job)
+        if params.input_file:
+            input_file = params.input_file
+        else:
+            input_file = ""
+        steps_jobs = create_job_steps(steps, steps_def, job, os.path.abspath(input_file))        
     if params.path:
         if params.steps:
             for step in steps:
                 steps_jobs[step].set_path(params.path)
         else:
             job.set_path(params.path)
+    if params.optimize_cpus:
+	#RUN dry_run
+        if params.steps:
+            for step in steps:
+                if params.dryrun_path:
+                   dryrun_path = params.dryrun_path
+                else:
+                   run_local(steps_def, step, vasp_command="mpiexec vasp_std" )
+                   dryrun_path = "./"
+                cpus= set_parallelization(dryrun_path, params.optimize_cpus)
+                steps_jobs[step].add_option('ntasks', cpus)
+        else:
+            cpus= set_parallelization(params.optimize_cpus)
+            job.add_option('ntasks', cpus)
     if params.array:
         if params.steps:
             for step in steps:
@@ -37,13 +58,12 @@ def main():
         else:
             job.add_array_from_path()
 #            job.submit()
-
-    if params.dependency:
+    if params.dependency_step:
         if params.steps:
             for step in steps:
-                steps_jobs[step].dependency = params.dependency
+                steps_jobs[step].dependency = params.dependency_step
         else:
-            job.dependency = params.dependency
+            job.dependency = params.dependency_step
 
     action = params.action[0]
     if action == "freenodes":

@@ -29,6 +29,9 @@ def read_cli_params():
     parser.add_argument("--steps", help="Use steps (1,2,3 or 1-3")
     parser.add_argument("--array", action="store_true", help="Run job array based on step and path")
     parser.add_argument("--dependency_step", help="A step that blocks rest of steps")
+    parser.add_argument("--input_file", help="input.py file for your calculations")
+    parser.add_argument("--optimize_cpus", type=int, nargs="?", const=32, help="Use dry run to get optimal CPUs number, set #CPUs per node")
+    parser.add_argument("--dryrun_path", help="Set a path to outputs of a dry run (for a single step only)")
 #    check_action(parser.parse_args().action)
     return parser.parse_args()
 

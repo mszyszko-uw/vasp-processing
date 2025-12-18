@@ -8,7 +8,7 @@ def read_steps(steps_path: str = './steps.yaml'):
         steps = yaml.safe_load(f)
     return steps
 
-def create_job_steps(steps, steps_def, job_org: slurm_job):
+def create_job_steps(steps, steps_def, job_org: slurm_job, input_file):
     step_jobs = dict()
     for step in steps:
         if step not in steps_def:
@@ -20,6 +20,7 @@ def create_job_steps(steps, steps_def, job_org: slurm_job):
         except:
             pass
         step_jobs[step].run_commands = steps_def[step]['cmd']
+        step_jobs[step].input_file = input_file
         step_jobs[step].add_cmds()
     return step_jobs
 
