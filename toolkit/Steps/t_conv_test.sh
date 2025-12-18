@@ -17,7 +17,7 @@ module load Python/3.11.5 matplotlib/3.8.2 h5py/3.11.0
 START_DIR="$(pwd)"
 
 
-mapfile -t my_paths < <(python3 $START_DIR/Preprocessing/toolkit.py --step t_conv_test --part dry)
+mapfile -t my_paths < <(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_conv_test --part dry)
 for p in "${my_paths[@]}"; do
   cd "$p"
   echo "$p"
@@ -26,7 +26,7 @@ for p in "${my_paths[@]}"; do
 done
 
 cd "$START_DIR"
-mapfile -t my_paths < <(python3 $START_DIR/Preprocessing/toolkit.py --step t_conv_test --part cg_opt)
+mapfile -t my_paths < <(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_conv_test --part cg_opt)
 for p in "${my_paths[@]}"; do
   cd "$p"
   echo "$p"
@@ -35,7 +35,7 @@ for p in "${my_paths[@]}"; do
 done
 
 cd "$START_DIR"
-mapfile -t my_paths < <(python3 $START_DIR/Preprocessing/toolkit.py --step t_conv_test --part nw_opt)
+mapfile -t my_paths < <(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_conv_test --part nw_opt)
 for p in "${my_paths[@]}"; do
   cd "$p"
   echo "$p"
@@ -44,7 +44,7 @@ for p in "${my_paths[@]}"; do
 done
 
 cd "$START_DIR"
-mapfile -t my_paths < <(python3 $START_DIR/Preprocessing/toolkit.py --step t_conv_test --part scf)
+mapfile -t my_paths < <(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_conv_test --part scf)
 for p in "${my_paths[@]}"; do
   cd "$p"
   echo "$p"
@@ -53,5 +53,5 @@ for p in "${my_paths[@]}"; do
 done
 
 cd "$START_DIR"
-python3 $START_DIR/Preprocessing/toolkit.py --step t_conv_test --part report
+python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_conv_test --part report
 

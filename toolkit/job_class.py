@@ -29,7 +29,8 @@ class slurm_job:
                 commands: list = None,
                 module_name: str = "VASP",
                 run_commands: str = "vasp_parallel",
-                dependency: str = ''):
+                dependency: str = '',
+                input_file: str = ''):
         self.options = {
                 "job_name": job_name,
                 "output": output,
@@ -52,12 +53,13 @@ class slurm_job:
         self.env_cmd = ''
         self.run_commands = run_commands
         self.env_array = []
+        self.input_file = input_file
         self.cmds = ["module load " + self.module_name, self.run_commands]
         self.add_cmds()
         self.dependency = dependency
 
     def add_cmds(self):
-        self.cmds = self.env_array + ["module load " + self.module_name, self.env_cmd, self.run_commands]
+        self.cmds = self.env_array + ["module load " + self.module_name, self.env_cmd, f'INPUT="{self.input_file}"', self.run_commands]
         for cmd in self.cmds:
             self.slurm.add_cmd(cmd)
         self.slurm.set_shell("/bin/bash -l")

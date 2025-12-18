@@ -8,12 +8,12 @@ scf:
     ulimit -s unlimited
     
     START_DIR="$(pwd)"
-    output=$(python3 $START_DIR/Preprocessing/toolkit.py --step t_scf --part dry)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_scf --part dry)
     cd "$output"
     mpiexec vasp_std > log
     
     cd "$START_DIR"
-    output=$(python3 $START_DIR/Preprocessing/toolkit.py --step t_scf --part scf)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_scf --part scf)
     cd "$output"
     mpiexec vasp_std > log
         
@@ -27,27 +27,27 @@ geo:
     ulimit -s unlimited
 
     START_DIR="$(pwd)"
-    output=$(python3 $START_DIR/Preprocessing/toolkit.py --step t_geo --part dry)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_geo --part dry)
     cd "$output"
     mpiexec vasp_std > log
     
     cd "$START_DIR"
-    output=$(python3 $START_DIR/Preprocessing/toolkit.py --step t_geo --part cg_opt)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_geo --part cg_opt)
     cd "$output"
     mpiexec vasp_std > log
     
     cd "$START_DIR"
-    output=$(python3 $START_DIR/Preprocessing/toolkit.py --step t_geo --part nw_opt)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_geo --part nw_opt)
     cd "$output"
     mpiexec vasp_std > log
     
     cd "$START_DIR"
-    output=$(python3 $START_DIR/Preprocessing/toolkit.py --step t_geo --part scf)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_geo --part scf)
     cd "$output"
     mpiexec vasp_std > log
     
     cd "$START_DIR"
-    python3 $START_DIR/Preprocessing/toolkit.py --step t_geo --part report
+    python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_geo --part report
     
 conv_test:
   slurm: 
@@ -60,7 +60,7 @@ conv_test:
 
     START_DIR="$(pwd)"
     
-    mapfile -t my_paths < <(python3 $START_DIR/Preprocessing/toolkit.py --step t_conv_test --part dry)
+    mapfile -t my_paths < <(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_conv_test --part dry)
     for p in "${my_paths[@]}"; do
       cd "$p"
       echo "$p"
@@ -69,7 +69,7 @@ conv_test:
     done
     
     cd "$START_DIR"
-    mapfile -t my_paths < <(python3 $START_DIR/Preprocessing/toolkit.py --step t_conv_test --part cg_opt)
+    mapfile -t my_paths < <(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_conv_test --part cg_opt)
     for p in "${my_paths[@]}"; do
       cd "$p"
       echo "$p"
@@ -78,7 +78,7 @@ conv_test:
     done
     
     cd "$START_DIR"
-    mapfile -t my_paths < <(python3 $START_DIR/Preprocessing/toolkit.py --step t_conv_test --part nw_opt)
+    mapfile -t my_paths < <(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_conv_test --part nw_opt)
     for p in "${my_paths[@]}"; do
       cd "$p"
       echo "$p"
@@ -87,7 +87,7 @@ conv_test:
     done
     
     cd "$START_DIR"
-    mapfile -t my_paths < <(python3 $START_DIR/Preprocessing/toolkit.py --step t_conv_test --part scf)
+    mapfile -t my_paths < <(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_conv_test --part scf)
     for p in "${my_paths[@]}"; do
       cd "$p"
       echo "$p"
@@ -96,7 +96,7 @@ conv_test:
     done
     
     cd "$START_DIR"
-    python3 $START_DIR/Preprocessing/toolkit.py --step t_conv_test --part report
+    python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_conv_test --part report
 
 bs:
   slurm: 
@@ -108,12 +108,12 @@ bs:
     ulimit -s unlimited
 
     START_DIR="$(pwd)"
-    output=$(python3 $START_DIR/Preprocessing/toolkit.py --step t_bs --part dry)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_bs --part dry)
     cd "$output"
     mpiexec vasp_std > log
     
     cd "$START_DIR"
-    output=$(python3 $START_DIR/Preprocessing/toolkit.py --step t_bs --part bs)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_bs --part bs)
     cd "$output"
     mpiexec vasp_std > log
     
@@ -129,12 +129,12 @@ dos:
     ulimit -s unlimited
 
     START_DIR="$(pwd)"
-    output=$(python3 $START_DIR/Preprocessing/toolkit.py --step t_dos --part dry)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_dos --part dry)
     cd "$output"
     mpiexec vasp_std > log
     
     cd "$START_DIR"
-    output=$(python3 $START_DIR/Preprocessing/toolkit.py --step t_dos --part dos)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_dos --part dos)
     cd "$output"
     mpiexec vasp_std > log
     
@@ -150,12 +150,12 @@ scf_so:
     ulimit -s unlimited
     
     START_DIR="$(pwd)"
-    output=$(python3 $START_DIR/Preprocessing/toolkit.py --step t_scf_so --part dry)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_scf_so --part dry)
     cd "$output"
     mpiexec vasp_ncl > log
     
     cd "$START_DIR"
-    output=$(python3 $START_DIR/Preprocessing/toolkit.py --step t_scf_so --part scf)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_scf_so --part scf)
     cd "$output"
     mpiexec vasp_ncl > log
     
@@ -169,27 +169,27 @@ geo_so:
     ulimit -s unlimited
     
     START_DIR="$(pwd)"
-    output=$(python3 $START_DIR/Preprocessing/toolkit.py --step t_geo_so --part dry)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_geo_so --part dry)
     cd "$output"
     mpiexec vasp_ncl > log
     
     cd "$START_DIR"
-    output=$(python3 $START_DIR/Preprocessing/toolkit.py --step t_geo_so --part cg_opt)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_geo_so --part cg_opt)
     cd "$output"
     mpiexec vasp_ncl > log
     
     cd "$START_DIR"
-    output=$(python3 $START_DIR/Preprocessing/toolkit.py --step t_geo_so --part nw_opt)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_geo_so --part nw_opt)
     cd "$output"
     mpiexec vasp_ncl > log
     
     cd "$START_DIR"
-    output=$(python3 $START_DIR/Preprocessing/toolkit.py --step t_geo_so --part scf)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_geo_so --part scf)
     cd "$output"
     mpiexec vasp_ncl > log
     
     cd "$START_DIR"
-    python3 $START_DIR/Preprocessing/toolkit.py --step t_geo_so --part report
+    python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_geo_so --part report
     
 bs_so:
   slurm: 
@@ -201,12 +201,12 @@ bs_so:
     ulimit -s unlimited
 
     START_DIR="$(pwd)"
-    output=$(python3 $START_DIR/Preprocessing/toolkit.py --step t_bs_so --part dry)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_bs_so --part dry)
     cd "$output"
     mpiexec vasp_ncl > log
     
     cd "$START_DIR"
-    output=$(python3 $START_DIR/Preprocessing/toolkit.py --step t_bs_so --part bs)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_bs_so --part bs)
     cd "$output"
     mpiexec vasp_ncl > log
     
@@ -223,12 +223,12 @@ dos_so:
     ulimit -s unlimited    
 
     START_DIR="$(pwd)"
-    output=$(python3 $START_DIR/Preprocessing/toolkit.py --step t_dos_so --part dry)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_dos_so --part dry)
     cd "$output"
     mpiexec vasp_ncl > log
     
     cd "$START_DIR"
-    output=$(python3 $START_DIR/Preprocessing/toolkit.py --step t_dos_so --part dos)
+    output=$(python3 $START_DIR/Preprocessing/toolkit.py --input "$INPUT" --step t_dos_so --part dos)
     cd "$output"
     mpiexec vasp_ncl > log
     

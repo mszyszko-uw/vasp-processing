@@ -1,9 +1,36 @@
 import shutil, os, h5py, argparse, math
 import matplotlib.pyplot as plt
 import numpy as np
+import importlib.util
+from pathlib import Path
+import sys
+from defaults import *
+
+
+parser = argparse.ArgumentParser(description="Input agruments for the script")
+parser.add_argument("--step", type=str, help="Step")
+parser.add_argument("--part", type=str, help="Part of the step")
+parser.add_argument("--input", type=str, help="Input file")
+args = parser.parse_args()
 
 # SETTINGS loaded from input (globals: paths, INCAR_SETTINGS, etc.)
-from input import *
+if args.input:
+    input_path = Path(args.input).resolve()
+else:
+    input_path = Path("input.py").resolve()
+
+if not input_path.exists():
+    raise FileNotFoundError(f"Input file not found: {input_path}")
+
+spec = importlib.util.spec_from_file_location("user_input", input_path)
+user_input = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(user_input)
+globals().update({k: v for k, v in user_input.__dict__.items() if not k.startswith("__")})
+
+for key in STEPS.keys():
+    if not STEPS[key]:
+        STEPS[key] = os.path.dirname(input_path)
+
 
 # Create main calculation directory if it does not exist
 try:
@@ -800,10 +827,7 @@ def add_parallelization(nkpts, nbands):
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description="Input agruments for the script")
-    parser.add_argument("--step", type=str, help="Step")
-    parser.add_argument("--part", type=str, help="Part of the step")
-    args = parser.parse_args()
+
 
     # Helped dict for handling how the STEPS variable is set up
     step_paths_dict = {

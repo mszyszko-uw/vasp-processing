@@ -25,7 +25,11 @@ def main():
     if params.steps:
         steps=parse_part_values(params.steps)
         steps_def = read_steps()
-        steps_jobs = create_job_steps(steps, steps_def, job)
+        if params.input_file:
+            input_file = params.input_file
+        else:
+            input_file = ""
+        steps_jobs = create_job_steps(steps, steps_def, job, os.path.abspath(input_file))        
     if params.path:
         if params.steps:
             for step in steps:
@@ -54,7 +58,6 @@ def main():
         else:
             job.add_array_from_path()
 #            job.submit()
-
     if params.dependency_step:
         if params.steps:
             for step in steps:
