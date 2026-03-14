@@ -1,5 +1,5 @@
 package:
-  name: vasp-toolbox
+  name: dft-toolbox
   version: "0.1.0"
 
 source:

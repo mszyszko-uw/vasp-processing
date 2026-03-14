@@ -1,4 +1,4 @@
-name: vasp_toolbox-dev
+name: dft_toolbox-dev
 channels:
   - conda-forge
 

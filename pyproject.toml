@@ -3,7 +3,7 @@ requires = ["setuptools>=64", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "vasp-toolbox"
+name = "dft-toolbox"
 version = "0.1.0"
 description = "Toolkit for managing and postprocessing VASP DFT calculations on HPC/SLURM clusters"
 authors = [{name = "Tomasz Wozniak's team"}]
@@ -21,7 +21,7 @@ dependencies = [
 ]
 
 [project.scripts]
-vasp-toolbox = "vasp_toolbox.dft_toolkit:main"
+dft-toolbox = "dft_toolbox.dft_toolkit:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
