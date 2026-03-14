@@ -1,0 +1,14 @@
+name: vasp_toolbox-dev
+channels:
+  - conda-forge
+
+dependencies:
+  - python
+  - numpy>=1.26
+  - matplotlib
+  - scipy
+  - h5py
+  - pyyaml
+  - pip
+  - pip:
+      - simple-slurm

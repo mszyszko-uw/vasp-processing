@@ -1,0 +1,31 @@
+package:
+  name: vasp-toolbox
+  version: "0.1.0"
+
+source:
+  path: ..
+
+build:
+  noarch: python
+  script: {{ PYTHON }} -m pip install . --no-deps -vv
+
+requirements:
+  host:
+    - python
+    - pip
+    - setuptools
+    - wheel
+  run:
+    - python
+    - numpy >=1.26
+    - matplotlib
+    - scipy
+    - h5py
+    - pyyaml
+    - pip
+      #    - simple-slurm
+
+about:
+  summary: Toolkit for managing and postprocessing VASP DFT calculations on HPC/SLURM clusters
+  license: MIT
+

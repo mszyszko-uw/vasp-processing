@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vasp-toolbox"
+version = "0.1.0"
+description = "Toolkit for managing and postprocessing VASP DFT calculations on HPC/SLURM clusters"
+authors = [{name = "Tomasz Wozniak's team"}]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.10"
+
+dependencies = [
+    "numpy>=1.26",
+    "matplotlib",
+    "scipy",
+    "h5py",
+    "pyyaml",
+    "simple-slurm"
+]
+
+[project.scripts]
+vasp-toolbox = "vasp_toolbox.dft_toolkit:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
