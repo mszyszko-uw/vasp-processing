@@ -1,4 +1,4 @@
-# dft-toolbox
+# DFTbox
 
 Toolkit for managing and postprocessing VASP DFT calculations on HPC/SLURM clusters.
 
@@ -8,4 +8,4 @@ Using conda:
 
 ```bash
 conda build recipe
-conda install --use-local dft-toolbox
+conda install --use-local DFTbox
