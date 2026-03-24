@@ -1,5 +1,5 @@
 """
-dft-toolbox: Toolkit for managing and postprocessing VASP DFT calculations
+DFTbox: Toolkit for managing and postprocessing VASP DFT calculations
 on HPC/SLURM clusters.
 """
 
