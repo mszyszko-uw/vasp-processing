@@ -3,7 +3,7 @@ requires = ["setuptools>=64", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "dft-toolbox"
+name = "DFTbox"
 version = "0.1.0"
 description = "Toolkit for managing and postprocessing VASP DFT calculations on HPC/SLURM clusters"
 authors = [{name = "Tomasz Wozniak's team"}]
