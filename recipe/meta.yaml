@@ -1,5 +1,5 @@
 package:
-  name: dft-toolbox
+  name: DFTbox
   version: "0.1.0"
 
 source:
@@ -10,11 +10,13 @@ build:
   script: {{ PYTHON }} -m pip install . --no-deps -vv
 
 requirements:
-  host:
+  build:
     - python
     - pip
     - setuptools
     - wheel
+  host:
+    - python
   run:
     - python
     - numpy >=1.26
@@ -22,9 +24,7 @@ requirements:
     - scipy
     - h5py
     - pyyaml
-    - pip
-      #    - simple-slurm
-
+    
 about:
   summary: Toolkit for managing and postprocessing VASP DFT calculations on HPC/SLURM clusters
   license: MIT
