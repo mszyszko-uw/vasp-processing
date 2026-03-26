@@ -1,2 +1,2 @@
 def test_import():
-        import DFTbox
+        import vasp_toolbox
