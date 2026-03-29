@@ -2,8 +2,8 @@ import h5py
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.io import FortranFile
-from .Plotting import BandStructurePlot, DensityOfStatesPlot
-from .InformationCollector import InformationCollector
+from Plotting import BandStructurePlot, DensityOfStatesPlot
+from InformationCollector import InformationCollector
 
 class PhysicalConstants:
     pi      = 3.141592653589793     # no unit
