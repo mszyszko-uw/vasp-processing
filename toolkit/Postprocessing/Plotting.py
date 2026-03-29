@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from .InformationCollector import InformationCollector
-from .Artists import MatrixSculptor, ProjectionPainter, SegmentArranger, KlineEngineer, BandWriter
+from InformationCollector import InformationCollector
+from Artists import MatrixSculptor, ProjectionPainter, SegmentArranger, KlineEngineer, BandWriter
 
 def BandToGnuplot(Pmat, Emat, Kpts, Dvec, 
                   projection, bands, description, kpaths, 
