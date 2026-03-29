@@ -39,7 +39,7 @@ def ProjectionPainter(ions:list, num_ions:list, description:str) -> dict:
     orbital_names = {'s':[0], 'p':[1,2,3], 'd':[4,5,6,7,8], 'f':[i for i in range(9,16)],
                      'sp':[0,1,2,3,4], 'pd':[i for i in range(1,9)], 'spd':[i for i in range(0,9)],
                      'py':[1], 'pz':[2], 'px':[3],
-                     'dxy':[4], 'dyz':[5], 'dz2':[6], 'dxz':[7], 'x2-y2':[8],
+                     'dxy':[4], 'dyz':[5], 'dz2':[6], 'dxz':[7], 'dx2-y2':[8],
                      'fy3x2':[9], 'fxyz':[10], 'fyz2':[11], 'fz3':[12], 'fxz2':[13], 'fzx2':[14], 'fx3':[15]}
         
     direction_names = {'up':[0], 'down':[1], 
@@ -60,15 +60,16 @@ def ProjectionPainter(ions:list, num_ions:list, description:str) -> dict:
 
     iatoms = []
     for i in description:
-        if i.isnumeric(): iatoms.append(i)
+        if i.isnumeric(): iatoms.append(int(i))
 
     # Gather the ion projection list
     for atom in atom_indexes.keys():
         if atom in description:
             if len(iatoms):
                 for iatom in iatoms:
-                    projection['ion'].append(atom_indexes[atom][int(iatom)-1])
+                    projection['ion'].append(atom_indexes[atom][iatom-1])
             else: projection['ion'] = atom_indexes[atom]
+    if projection['ion']==[]: projection['ion'] = iatoms
     if projection['ion']==[]: projection['ion'] = ...
 
     # Gather the direction projection list

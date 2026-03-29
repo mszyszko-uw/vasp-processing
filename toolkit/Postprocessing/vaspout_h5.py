@@ -2,8 +2,8 @@ import h5py
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.io import FortranFile
-from Plotting import BandStructurePlot, DensityOfStatesPlot
-from InformationCollector import InformationCollector
+from .Plotting import BandStructurePlot, DensityOfStatesPlot
+from .InformationCollector import InformationCollector
 
 class PhysicalConstants:
     pi      = 3.141592653589793     # no unit
@@ -30,8 +30,12 @@ class vaspout_h5:
         try: self.vaspout = h5py.File(vaspout, 'r')
         except IsADirectoryError: 
             try: self.vaspout = h5py.File(vaspout+'vaspout.h5', 'r')
-            except FileNotFoundError: print('WARNING: No vaspout.h5 file found')
-        except FileNotFoundError: print('WARNING: No vaspout.h5 file found')
+            except FileNotFoundError: 
+                print('WARNING: No vaspout.h5 file found')
+                self.vaspout = vaspout
+        except FileNotFoundError: 
+            print('WARNING: No vaspout.h5 file found')
+            self.vaspout = vaspout
         self.ic = InformationCollector()
 
         # Get PATH to directory for conveniance
@@ -162,19 +166,18 @@ class vaspout_h5:
                 optical += [vb, cb, polariz, p_plus_squ, p_minus_squ, 
                             p_x_squ, p_y_squ, p_z_squ, p_squ]
                 
-                if self.ic.eval.size > 0 : 
-                    optical += [self.ic.eval[cb-1,0] - self.ic.eval[vb-1,0]]
-                    e_flag = 1
+                optical += [self.ic.eval[cb-1,0] - self.ic.eval[vb-1,0]] if self.ic.eval.size > 0 else [None]
                 
-        optical = np.real(np.array(optical)).reshape(-1, 9 + e_flag)
-        header = "vb\t\t# cb\t\tcir_pol\t\t|P+|^2\t\t|P-|^2\t\t|Px|^2\t\t|Py|^2\t\t|Pz|^2\t\t|P|^2"
-        if e_flag : header += "\t\t  dE"
+        optical = np.real(np.array(optical)).reshape(-1, 10)
+        header = "vb  # cb  cir_pol   |P+|^2    |P-|^2    |Px|^2      |Py|^2      |Pz|^2      |P|^2       dE"
 
-        if save_txt : np.savetxt(self.ic.folder+"OSR.txt", optical, fmt = '%.4f', delimiter='\t\t', header=header)
+        if save_txt : np.savetxt(self.ic.folder+"OSR.txt", optical, 
+                                 fmt = ['% 4i','% 4i','% 8.4f','% 8.4f','% 8.4f','% 10.3E','% 10.3E','% 10.3E','% 10.3E','% 8.4f'], 
+                                 delimiter='  ', header=header)
         if save_np : np.save(self.ic.folder+"OSR.npy", optical)
                 
         # return "  vb \tcb \tcir_pol\t|P+|^2\t|P-|^2\t|Px|^2\t|Py|^2\t|Pz|^2\t|P|^2\t  dE\n" + \
-        #         np.array2string(optical, formatter={'float_kind':lambda x: "%.2f" % x}, separator='\t', suppress_small=True)
+        #         np.array2string(optical, formatter={'float_kind':lambda x: "%.2f" %-x}, separator='\t', suppress_small=True)
     
 
     def L_Plot(self, kpoint, direction, vb_max, num_vb, num_cb, save_plot = True, save_txt = False, save_np = False, **kwargs):

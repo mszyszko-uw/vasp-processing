@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from InformationCollector import InformationCollector
-from Artists import MatrixSculptor, ProjectionPainter, SegmentArranger, KlineEngineer, BandWriter
+from .InformationCollector import InformationCollector
+from .Artists import MatrixSculptor, ProjectionPainter, SegmentArranger, KlineEngineer, BandWriter
 
 def BandToGnuplot(Pmat, Emat, Kpts, Dvec, 
                   projection, bands, description, kpaths, 
@@ -25,26 +25,27 @@ def BandToGnuplot(Pmat, Emat, Kpts, Dvec,
     chosen_orbits = ''
     orbitals = projection['orbital'] if projection['orbital'] != ... else np.arange(Pmat.shape[-1])
     directions = projection['direction']
-    ions = projection['ion']
+    ions = projection['ion'] if projection['ion'] != ... else np.arange(Pmat.shape[-2])
     bands = bands if bands != ... else np.arange(Pmat.shape[1])
 
     for i in orbitals:
         chosen_orbits += ' '+orbit_names[i]
     Dvec = Dvec.copy()
     Dvec -= Dvec[0]
-    with open(folder+description.replace(' ', '_'), 'w') as file:
-        file.write(description+' '+kpaths+' '+(str(bands) if len(bands)<Pmat.shape[1] else '')+'\n')
+    with open(folder+description.replace(' ', '_')+'.dat', 'w') as file:
+        file.write(description+' '+kpaths+' '+'\n')
         header = 'k point coordinates x y z             | Distance   | Energy     |'
         # file.write(' Dir 1 Ion 1 px py pz                 : Ion 2 px py pz\n')
         for band in bands:
             mat = np.concatenate([Kpts, Dvec[:,None], Emat[:,band][:,None]], axis = 1)
-            for in_dir, direction in enumerate(directions):
-                stub = f' Dir {in_dir+1} '
-                for in_ion, ion in enumerate(ions):
-                    stub += f': Ion {in_ion+1}' + chosen_orbits
-                    stub += ' '*(len(orbitals)*13*(in_ion+1) - len(stub)-1)
-                    mat = np.concatenate([mat, Pmat[:,band,direction,ion,orbitals]], axis = 1)
-                if header: header += stub +'|'
+            if description.lower() not in  ['empty','blank']:
+                for in_dir, direction in enumerate(directions):
+                    stub = f' Dir {in_dir+1} '
+                    for in_ion, ion in enumerate(ions):
+                        stub += f': Ion {in_ion+1}' + chosen_orbits
+                        stub += ' '*(len(orbitals)*13*(in_ion+1) - len(stub)-1)
+                        mat = np.concatenate([mat, Pmat[:,band,direction,ion,orbitals]], axis = 1)
+                    if header: header += stub +'|'
             if header: file.write(header+'\n')
             header = ''
             np.savetxt(file, mat, '%12.8f')
@@ -72,18 +73,19 @@ def DOSToGnuplot(Pdos, Edos,
 
     for i in orbitals:
         chosen_orbits += ' '+orbit_names[i]
-    with open(folder+description.replace(' ', '_'), 'w') as file:
+    with open(folder+description.replace(' ', '_')+'.dat', 'w') as file:
         file.write(description+'\n')
         header = ' Energy     |'
         # file.write(' Dir 1 Ion 1 px py pz                 : Ion 2 px py pz\n')
         mat = Edos[:,None]
-        for in_dir, direction in enumerate(directions):
-            stub = f' Dir {in_dir+1} '
-            for in_ion, ion in enumerate(ions):
-                stub += f': Ion {in_ion+1}' + chosen_orbits
-                stub += ' '*(len(orbitals)*13*(in_ion+1) - len(stub)-1)
-                mat = np.concatenate([mat, Pdos[:,direction,ion,orbitals]], axis = 1)
-            if header: header += stub +'|'
+        if description.lower() not in  ['empty','blank']:
+            for in_dir, direction in enumerate(directions):
+                stub = f' Dir {in_dir+1} '
+                for in_ion, ion in enumerate(ions):
+                    stub += f': Ion {in_ion+1}' + chosen_orbits
+                    stub += ' '*(len(orbitals)*13*(in_ion+1) - len(stub)-1)
+                    mat = np.concatenate([mat, Pdos[:,direction,ion,orbitals]], axis = 1)
+                if header: header += stub +'|'
         if header: file.write(header+'\n')
         header = ''
         np.savetxt(file, mat, '%12.8f')
@@ -184,7 +186,10 @@ def BandStructurePlot(ic: InformationCollector,
         ax.axhline(0, color="black", linestyle=":")
         if E0==None:
             ax.axhline(Egap, color="black", linestyle=":")
-            ax.annotate(f'{Egap:.3f}', xy = (Dvec[0], Egap))
+            if 'fontsize' in kwargs.keys():
+                ax.annotate(f'{Egap:.3f}', xy = (Dvec[0], Egap+0.05), size=kwargs['fontsize'])
+            else:
+                ax.annotate(f'{Egap:.3f}', xy = (Dvec[0], Egap+0.05))
 
     ax.set_xticks(Ktik, Klab)
     ax.set_xlim(Dvec[0], Dvec[-1])
