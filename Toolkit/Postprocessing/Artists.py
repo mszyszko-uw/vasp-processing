@@ -166,10 +166,11 @@ def KlineEngineer(Lvec, Scal, Kpts, Klen, Klab,
     bM[0,...] = 2*np.pi*np.cross(a2, a3) / V
     bM[1,...] = 2*np.pi*np.cross(a3, a1) / V
     bM[2,...] = 2*np.pi*np.cross(a1, a2) / V
-    Rval = np.sum(bM**2, axis = 1)**.5
+    # Rval = np.sum(bM**2, axis = 1)**.5
 
     # calulate the difference beteen subsequent kpoints
-    Dvec *= Rval
+    # Dvec *= Rval
+    Dvec = np.matmul(Dvec,bM)
     Dvec[1:] -= Dvec[:-1]
     Dvec = np.cumsum(np.sum((Dvec)**2, axis = 1)**.5)
 
